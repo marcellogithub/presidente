@@ -1,0 +1,141 @@
+<?php  	
+	// RISULTATI:  LISTA -----------------------------------------------------------
+	// arriva - $stringa : la stringa di ricerca, da propagare
+	// arriva - $s : la session in uso , da propagare
+	// arriva - $keyoggettirilevanza[] : key: codice oggetto - value: numero di volte che Ž stato trovato
+	// arriva - $gia: numero annunci giˆ visti
+	// arriva - $quanti: quanti annunci vedere volta per volta
+	// arriva - dbmusato: il database in uso
+	
+	// UTILIZZO UN CAMPO SPECIFICO PER L'ORDINAMENTO ----------------
+	$dbm = dbmmopen("dati/$dbmusato","r");
+	reset($keyoggettirilevanza);
+	while ( list( $codice, $val ) = each( $keyoggettirilevanza ) ):		
+			$m=unserialize(dbmmfetch($dbm,$codice));
+			if($campo_per_ordinare==""): $campo_per_ordinare="IDoggetto"; endif;//default
+			$valoriserilizzati=dbmmfetch($dbm,$codice);
+			$record_ordinati[$valoriserilizzati]=$m[$campo_per_ordinare];
+	endwhile;
+	dbmmclose($dbm);	
+	$keyoggettirilevanza=$record_ordinati;
+		
+	if(is_array($keyoggettirilevanza)):
+		arsort($keyoggettirilevanza); // // i numeri pi alti vengono prima
+	endif;
+	reset($keyoggettirilevanza);
+		
+	if($quanti<10): $quanti=10; endif;
+	$visti=intval($gia)+1;
+	$j=0;
+	$dbm = dbmmopen("dati/$dbmusato","r");
+	
+	/*
+	if($titolo_della_pagina==""): $titolo_della_pagina="Titolo"; endif;
+	$sottotitolo_della_pagina=""; //"Sottotitolo";
+	$titolo_vis_singolo=""; //"Visualizzazione_singolo"
+
+	$contenuto.= "<span class='titolo'>$titolo_della_pagina</span>";
+	$contenuto.= "<span class='sottotitolo'>$sottotitolo_della_pagina</span>";
+	*/
+			
+		// METTO INTESTAZIONE
+		$testata_da_usare="_cat_". $dbmusato ."_test.incl";
+		if(file_exists("$testata_da_usare")):
+			include $testata_da_usare;
+		else:
+			$contenuto.="<span class=titolo>$dbmusato</span>";
+		endif;
+		/*
+		if($gs!=""):
+			$contenuto.= "&nbsp;&nbsp;<a href='$PHP_SELF?gs=$gs&s=$s&az=nuovo&dbmusato=$dbmusato'><font size=1>aggiungi record</font></a>";
+		endif;
+		$contenuto.= "<br>";
+		*/
+		
+		// MINI-NAVIGAZIONE
+		$contenuto.= "<table width=100% border=0><tr>";
+		$contenuto.= "<td align=left><span class='testo'>trovati $oggettitrovatitotale record</td>";
+		//$contenuto.= "<td>&nbsp;</td>";
+		//$contenuto.= "</tr><tr>";
+		//$contenuto.= "<td><span class='testo'>visualizzati da ".($gia+1)." a $visti.</span></td>"; 
+		$contenuto.= "<td align=right><span class='testo'>$precedenti $inmezzo $prossimi</span></td>";
+		$contenuto.= "</tr></table>";
+		$contenuto.= "<hr>";
+
+		// MOSTRO I DATI
+		$elencati="";
+		if (is_array($keyoggettirilevanza)):
+			reset($keyoggettirilevanza);
+			while ( list( $key, $val ) = each( $keyoggettirilevanza ) ):
+				if( $j>=$gia && $j<($gia+$quanti) && $j<=$oggettitrovatitotale && $val!=""):
+
+					$cata=unserialize($key);
+					
+					if($hacarrello=="si"):
+						$opzione_carrello= "<a href='$PHP_SELF?gs=$gs&s=$s&metti=si&IDoggetto=$cata[IDoggetto]&$para&az=$az'>metti nel carrello</a><br>";
+						if($carrello[$cata[IDoggetto]]!=""):
+							$opzione_carrello= "<a href='$PHP_SELF?gs=$gs&s=$s&metti=no&IDoggetto=$cata[IDoggetto]&$para&az=$az'>togli dal carrello</a><br>";
+						endif;
+					endif;
+						
+					// APRO COLONNE 
+					if ($colonne==0):
+						$contenuto.= "<table border=0 cellspacing=1 cellpadding=3><tr>";
+					endif;
+					$contenuto.= "<td align=left valign=\"top\" bgcolor=\"\">"; //apro  la colonna
+						
+					// INSERISCO CONTENUTO 
+					$pezzettino_da_usare="_cat_". $dbmusato ."_lista.incl";
+					if(file_exists("$pezzettino_da_usare")):
+						include $pezzettino_da_usare;
+					else:
+						$contenuto.= "<span class='testo'>$cata[IDoggetto]</span> - ";
+						$nome01=$c_cata[1]; $cata[$nome01]=stripslashes($cata[$nome01]); $contenuto.= substr("<span class='testo'>$cata[$nome01]</span> - ", 0,100);
+						$nome02=$c_cata[2]; $cata[$nome02]=stripslashes($cata[$nome02]); $contenuto.= substr("<span class='testo'>$cata[$nome02]</span> - ", 0,100);
+						$nome03=$c_cata[3]; $cata[$nome03]=stripslashes($cata[$nome03]); $contenuto.= substr("<span class='testo'>$cata[$nome03]</span> - ", 0,100);			
+						$nome04=$c_cata[4]; $cata[$nome04]=stripslashes($cata[$nome04]); $contenuto.= substr("<span class='testo'>$cata[$nome04]</span> - ", 0,100);			
+						$nome05=$c_cata[5]; $cata[$nome05]=stripslashes($cata[$nome05]); $contenuto.= substr("<span class='testo'>$cata[$nome05]</span> - ", 0,100);			
+						$contenuto.= "
+									<br>
+									<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>modifica</a> | 
+									<a href='$PHP_SELF?gs=$gs&s=$s&az=eliminaoggetto&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>elimina</a> | 
+									<a href='$PHP_SELF?gs=$gs&s=$s&az=duplica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>duplica</a>
+									<br>
+									";
+						$contenuto.= "<img src=\"imma/DOTnero50.gif\" height=1 width=600>";
+					endif;
+						
+					// CHIUDO COLONNE 
+					$contenuto.= "</td>"; //chiudo la colonna
+					$colonne++;  //aggiorno il numero di colonne
+					if ($colonne==$numero_colonne): //chiudo la riga se arrivato a due colonne
+						$contenuto.= "</tr>";
+						$colonne=0;
+					endif;
+					
+					$elencati++;
+					$visti++;
+				endif;
+				$j++;
+
+			endwhile;
+			
+			if($elencati==""):
+				$contenuto.="<table><tr><td align=center valign=\"top\" ><span class='testo'>In questo momento il catalogo e' vuoto</span></td></tr>";
+			endif;
+			$contenuto.= "</table>";
+		endif;	
+	
+	//html($contenuto, $messaggio);
+
+	// MINI-NAVIGAZIONE
+	$contenuto.= "<hr>";
+	$contenuto.= "<table width=100% border=0><tr>";
+	//$contenuto.= "<td align=left><span class='testo'>trovati $oggettitrovatitotale titoli</td>";
+	$contenuto.= "<td>&nbsp;</td>";
+	//$contenuto.= "</tr><tr>";
+	//$contenuto.= "<td><span class='testo'>visualizzati da ".($gia+1)." a $visti.</span></td>"; 
+	$contenuto.= "<td align=right><span class='testo'>$precedenti $inmezzo $prossimi</span></td>";
+	$contenuto.= "</tr></table>";
+	
+?>

@@ -1,0 +1,262 @@
+<?php  
+//LA RICERCA AND NON FUNZIONA
+
+// TROVA CORRISPONDENZA TESTO PER OGNI PAROLA -----------------------------------------
+// effettua una ricerca di corrispondenza testo per ogni parola nella stringa di ricerca, e fa uscire
+//            un array con tutte le chiavi trovate, associate al numero di volte che sono state trovate
+// se c'Ž $camporicerca fa una ricerca solo in quel campo
+// arriva - $dbmusato il  dbm usato --------------------------------------------------------
+// arriva - $stringa ci sono le parole cercate -----------------------------------------------
+// esce - $stringa ci sono le parole cercate per propagazione ---------------------------------
+// esce - $keyoggettirilevanza[$i]:  key=IDoggetto e value=numero di volte che Ž stato trovato --
+// arriva - dbmusato - il database in uso
+		
+// 1  RICERCA PER CAMPI -------------------------------------------------
+	if($tiporicerca=="campi"):	
+				
+		
+		//PREPARO $ricerche[] ---------------------------------------------------------
+		//in $ricerche si trovano le terne: campo di ricerca, stringa cercata, operatore confronto
+		//$i alla fine ha contato il numero delle terne
+		$i=1;
+		if($stringa01!=""): $campo[$i]=$camporicerca01; $stringa[$i]=rawurlencode($stringa01); $operatore[$i]=$operatore01; $i++; endif;
+		if($stringa02!=""): $campo[$i]=$camporicerca02; $stringa[$i]=rawurlencode($stringa02); $operatore[$i]=$operatore02; $i++; endif;
+		if($stringa03!=""): $campo[$i]=$camporicerca03; $stringa[$i]=rawurlencode($stringa03); $operatore[$i]=$operatore03; $i++; endif;
+		if($stringa04!=""): $campo[$i]=$camporicerca04; $stringa[$i]=rawurlencode($stringa04); $operatore[$i]=$operatore04; $i++; endif;
+		if($stringa05!=""): $campo[$i]=$camporicerca05; $stringa[$i]=rawurlencode($stringa05); $operatore[$i]=$operatore05; $i++; endif;
+		if($stringa06!=""): $campo[$i]=$camporicerca06; $stringa[$i]=rawurlencode($stringa06); $operatore[$i]=$operatore06; $i++; endif;
+		if($stringa07!=""): $campo[$i]=$camporicerca07; $stringa[$i]=rawurlencode($stringa07); $operatore[$i]=$operatore07; $i++; endif;
+		if($stringa08!=""): $campo[$i]=$camporicerca08; $stringa[$i]=rawurlencode($stringa08); $operatore[$i]=$operatore08; $i++; endif;
+		if($stringa09!=""): $campo[$i]=$camporicerca09; $stringa[$i]=rawurlencode($stringa09); $operatore[$i]=$operatore09; $i++; endif;
+		if($stringa10!=""): $campo[$i]=$camporicerca10; $stringa[$i]=rawurlencode($stringa10); $operatore[$i]=$operatore10; $i++; endif;
+		$i--;
+
+		$campicercati=$i;
+				
+		// normalizzo le date
+		$j=0;
+		while($j<=$campicercati):
+			$j++;	
+			if($stringa[$j]=="data"):
+				$nome_campo=$campo[$j];	
+				//echo "<font color=999>stringa_giorno $stringa_giorno[$nome_campo]</font><br>"; //togliere
+				//echo "<font color=999>stringa_mese $stringa_mese[$nome_campo]</font><br>"; //togliere
+				//echo "<font color=999>stringa_anno $stringa_anno[$nome_campo]</font><br>"; //togliere
+				if(	$stringa_giorno[$nome_campo]=="00" &&
+					 $stringa_mese[$nome_campo]=="0" &&
+					 trim($stringa_anno[$nome_campo])==""
+					):
+					$stringa[$j]="";
+					//echo "&nbsp;&nbsp;&nbsp;&nbsp; stringa[$j] tolta<br>";//togliere		
+				else:
+	
+					$stringa[$j]=mktime(0, 0, 0, $stringa_mese[$nome_campo], $stringa_giorno[$nome_campo], $stringa_anno[$nome_campo]); // ore-minuti-secondi-mese-giorno-anno
+					//echo "&nbsp;&nbsp;&nbsp;&nbsp; stringa[$j] $stringa[$j]<br>";//togliere		
+				endif;
+			endif;
+		endwhile;
+
+		//da propagare per continuare la ricerca
+		$Rstringa01=rawurlencode($stringa01);
+		$Rstringa02=rawurlencode($stringa02);
+		$Rstringa03=rawurlencode($stringa03);
+		$Rstringa04=rawurlencode($stringa04);
+		$Rstringa05=rawurlencode($stringa05);
+		$Rstringa06=rawurlencode($stringa06);
+		$Rstringa07=rawurlencode($stringa07);
+		$Rstringa08=rawurlencode($stringa08);
+		$Rstringa09=rawurlencode($stringa09);
+		$Rstringa10=rawurlencode($stringa10);
+		//$para="az=rispondi&tiporicerca=campi&criterioricerca=$criterioricerca&";
+		$para="tiporicerca=campi&criterioricerca=$criterioricerca&";
+		if($stringa01!=""): $para.="camporicerca01=$camporicerca01&stringa01=$Rstringa01&operatore01=$operatore01&"; endif;
+		if($stringa02!=""): $para.="camporicerca02=$camporicerca02&stringa02=$Rstringa02&operatore02=$operatore02&"; endif;
+		if($stringa03!=""): $para.="camporicerca03=$camporicerca03&stringa03=$Rstringa03&operatore03=$operatore03&"; endif;
+		if($stringa04!=""): $para.="camporicerca04=$camporicerca04&stringa04=$Rstringa04&operatore04=$operatore04&"; endif;
+		if($stringa05!=""): $para.="camporicerca05=$camporicerca05&stringa05=$Rstringa05&operatore05=$operatore05&"; endif;
+		if($stringa06!=""): $para.="camporicerca06=$camporicerca06&stringa06=$Rstringa06&operatore06=$operatore06&"; endif;
+		if($stringa07!=""): $para.="camporicerca07=$camporicerca07&stringa07=$Rstringa07&operatore07=$operatore07&"; endif;
+		if($stringa08!=""): $para.="camporicerca08=$camporicerca08&stringa08=$Rstringa08&operatore08=$operatore08&"; endif;
+		if($stringa09!=""): $para.="camporicerca09=$camporicerca09&stringa09=$Rstringa09&operatore09=$operatore09&"; endif;
+		if($stringa10!=""): $para.="camporicerca10=$camporicerca10&stringa10=$Rstringa10&operatore10=$operatore10&"; endif;
+	
+		// RICERCA NON VALIDA  -----------------------------------
+		if($i==0): //non c'Ž nemmeno una stringa di ricerca
+			// METTO INTESTAZIONE
+			$testata_da_usare="_cat_". $dbmusato ."_test.incl";
+			if(file_exists("$testata_da_usare")):
+				include $testata_da_usare;
+			else:
+				$contenuto.="<span class=titolo>$dbmusato</span><br>";
+			endif;
+			$contenuto.= "<span class=testo><br><font color=red>manca una parola ricercabile</font><br><br></br>";
+			$impostazioni_da_usare="_cat_". $dbmusato ."_imp.incl";
+			if(!file_exists("$impostazioni_da_usare")):
+				$impostazioni_da_usare="_ric_imp.incl";
+			endif;
+			include $impostazioni_da_usare;
+			html($contenuto, $messaggio);
+		endif;
+	
+		$j=0;
+		while($j<=$i):
+			$j++;
+				
+			if($stringa[$j]!=""):				
+				$camporicerca=$campo[$j];
+				$stringauso=$stringa[$j];
+				$operatoreuso=$operatore[$j];
+					if($operatoreuso==""): $operatoreuso="contenuto"; endif;
+				
+				$stringauso=rawurldecode($stringauso);	//codifico la stringa in caso di spazi tra le parole
+				//$contenuto.= "<span class='testo'>stringauso - $stringauso</span><br>";//togliere		
+
+				$stringhebuone[1]=$stringauso;
+				//$contenuto.= "<span class='testo'>stringhebuone[1] - $stringhebuone[1]</span><br>";//togliere		
+							
+				reset($stringhebuone);
+				$dbm = dbmmopen("dati/$dbmusato","r");
+				
+				while ( list( $key, $val ) = each( $stringhebuone ) ):
+					$getkey=dbmmfirstkey($dbm);
+					while($getkey):
+					
+						$m=unserialize(dbmmfetch($dbm,$getkey));
+							
+						$oggettopossibile=$m[$camporicerca];
+						
+						//$contenuto.= "<hr>";//togliere		
+						//$contenuto.= "<span class='testo'>getkey - $getkey</span><br>";//togliere		
+						//$contenuto.= "<span class='testo'>camporicerca - $camporicerca</span><br>";//togliere		
+						//$contenuto.= "<span class='testo'>val - $val</span><br>";//togliere		
+						//$contenuto.= "<span class='testo'>oggettopossibile - $oggettopossibile</span><br>";//togliere		
+						//$contenuto.= "<span class='testo'>operatoreuso - $operatoreuso</span><br>";//togliere		
+						//$contenuto.= "<span class='testo'>dbmusato - $dbmusato</span><br>";//togliere		
+						//if(ermegi($val,$oggettopossibile)): $contenuto.="CONTENUTO<br>"; endif; //togliere
+						
+						// non si pu˜ mettere qui nulla che sposti il puntatore dell'array
+									
+						if($operatoreuso=="uguale"): if($val==$oggettopossibile): $keyoggettirilevanza[$getkey]+=1; endif;
+						elseif($operatoreuso=="contenuto"): if(ermegi($val,$oggettopossibile)): $keyoggettirilevanza[$getkey]+=1; endif;
+						elseif($operatoreuso=="maggiore"): if($val<=$oggettopossibile): $keyoggettirilevanza[$getkey]+=1; endif;
+						elseif($operatoreuso=="minore"): if($val>=$oggettopossibile): $keyoggettirilevanza[$getkey]+=1; endif;
+						else: if(ermegi($val,$oggettopossibile)): $keyoggettirilevanza[$getkey]+=1; endif;
+						endif;
+											
+						$getkey=dbmmnextkey($dbm,$getkey);
+						//$contenuto.= "getkey - $getkey<hr>";//togliere		
+					endwhile;
+				endwhile;
+				dbmmclose($dbm);
+			endif;
+		endwhile;
+		
+		//LA RICERCA AND NON FUNZIONA
+		/*
+		//se la ricerca Ž AND
+		if($keyoggettirilevanza):
+			if($criterioricerca=="AND"):
+				while ( list( $key, $val ) = each( $keyoggettirilevanza ) ):
+					if($val==$campicercati):
+						$temporaneo[$key]=$val;
+					endif;
+				endwhile;
+				$keyoggettirilevanza=$temporaneo;
+			endif;
+		endif;
+		*/
+
+		/*
+		//ricerca alternativa in caso di zero risultati
+		if(count($keyoggettirilevanza)==0):
+			// COSTRUISCO STRINGA CON TUTTE LE COSE CERCATE
+			$stringa=rawurldecode($stringa);
+			if($stringa01!=""): $stringa.=" $stringa01"; endif;
+			if($stringa02!=""): $stringa.=" $stringa02"; endif;
+			if($stringa03!=""): $stringa.=" $stringa03"; endif;
+			if($stringa04!=""): $stringa.=" $stringa04"; endif;
+			if($stringa05!=""): $stringa.=" $stringa05"; endif;
+			if($stringa06!=""): $stringa.=" $stringa06"; endif;
+			if($stringa07!=""): $stringa.=" $stringa07"; endif;
+			if($stringa08!=""): $stringa.=" $stringa08"; endif;
+			if($stringa09!=""): $stringa.=" $stringa09"; endif;
+			if($stringa10!=""): $stringa.=" $stringa10"; endif;
+			$tiporicerca="libera";
+		endif;
+		*/
+
+	endif;
+
+//2// RICERCA LIBERA ---------------------------------------------
+	if($tiporicerca=="libera"): // Ž una ricerca per parole chiave
+	// EFFETTUO RICERCHE SU TUTTE LE PAROLE CHIAVE SU TUTTI I CAMPI  ----------
+	
+		//da propagare per continuare la ricerca
+		$para="az=rispondi&tiporicerca=libera&stringa=".rawurlencode($stringa)."&";
+
+		// RIPULITURA DI STRINGA -------------------------------------------
+		// tolgo preposizioni ignorabili  ---------------------------------------
+		// metto le singole parole in stringhebuone[$k]  ------------------------
+		$ignorabili="il la al una uno in e su per fra tra le gli con"; // le chiavi di ricerca da eliminare
+		$k=1;
+		$stringhe=explode(" ", $stringa);
+		while ( list( $key, $val ) = each( $stringhe ) ):
+			if(!ermegi($val,$ignorabili)):
+				$stringhebuone[$k]=$val;
+			endif;
+			$k++;
+		endwhile;
+
+		// RICERCA NON VALIDA  -----------------------------------
+		$annuncistringhebuone=count($stringhebuone);
+		if($annuncistringhebuone==0):
+			// METTO INTESTAZIONE
+			$testata_da_usare="_cat_". $dbmusato ."_test.incl";
+			if(file_exists("$testata_da_usare")):
+				include $testata_da_usare;
+			else:
+				$contenuto.="<span class=titolo>$dbmusato</span><br>";
+			endif;
+			$contenuto.= "<span class=testo><br><font color=red>manca una parola ricercabile</font><br><br></br>";
+			$impostazioni_da_usare="_cat_". $dbmusato ."_imp.incl";
+			if(!file_exists("$impostazioni_da_usare")):
+				$impostazioni_da_usare="_ric_imp.incl";
+			endif;
+			include $impostazioni_da_usare;
+			html($contenuto, $messaggio);
+		endif;
+
+		reset($stringhebuone);
+		$dbm = dbmmopen("dati/$dbmusato","r");
+		$totale_record=dbmmfetch($dbm,"contatore");
+		if($totale_record<50): $totale_record=50; endif;//togliere
+		while ( list( $key, $val ) = each( $stringhebuone ) ):
+				//$getkey=dbmmfirstkey($dbm);
+				//while($getkey):
+				for ($getkey = 1; $getkey <= $totale_record; $getkey++):
+					
+					$oggettopossibile=dbmmfetch($dbm,$getkey);
+					if(ermegi($val,$oggettopossibile)):
+						$keyoggettirilevanza[$getkey]+=1;
+					endif;
+					
+					/*
+					$oggettopossibile=unserialize(dbmmfetch($dbm,$getkey));
+					vedo($oggettopossibile);//togliere
+					if(is_array($oggettopossibile)):
+						while ( list( $campo_indagato, $chiave_non_usata ) = each( $oggettopossibile ) ):
+	   						$contenuto.= "$getkey -- $val -- $campo_indagato<br>"; //togliere
+							if(ermegi($val,$campo_indagato)):
+								$keyoggettirilevanza[$getkey]+=1;
+							endif;
+						endwhile;
+					endif;
+					//$getkey=dbmmnextkey($dbm,$getkey);
+				//endwhile;
+				*/
+				endfor;
+		endwhile;
+		dbmmclose($dbm);
+	endif;
+
+?>

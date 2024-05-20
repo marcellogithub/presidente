@@ -1,0 +1,65 @@
+<?php  
+
+// _cat_elenca_relazionati.incl
+// non pu˜ stare in _cat_azioni.incl perch viene richiamato in mezzo agli script
+
+// GESTIONE: ELENCO I  RECORD RELAZIONATI -----------------------------------------------------
+// arriva: 
+// $dbmusatoBIS - il dbm relazionato
+// $camporelazione: il nome del campo che tiene la relazione in questo dbm
+// $IDrelazionato: la ID da cercare nel campo che tiene la relazione
+// esce: 
+// elenco dei record relazionati
+
+	unset($cataBIS);
+	unset($prendo_cataBIS);
+	
+	if (file_exists("dati/$dbmusatoBIS") || file_exists("dati/$dbmusatoBIS.db")):
+		// PRENDO I DATI e li metto in prendo_cataBIS
+		// con chiave l'intero array e valore il $campo_per_ordinare
+		if($campo_per_ordinare==""): $campo_per_ordinare="IDoggetto"; endif; // il default
+		$dbmBIS = dbmmopen("dati/$dbmusatoBIS","r");
+			$c_cataBIS=unserialize(dbmmfetch($dbmBIS,"campi"));
+			$t_cataBIS=unserialize(dbmmfetch($dbmBIS,"tipi"));
+			$n_cataBIS=unserialize(dbmmfetch($dbmBIS,"nomi"));
+			$v_cataBIS=unserialize(dbmmfetch($dbmBIS,"valori"));
+			$ullo=dbmmfirstkey($dbmBIS);
+			while($ullo!=""):
+					if($ullo!="campi" && $ullo!="tipi" && $ullo!="nomi" && $ullo!="contatore" && $ullo!="valori" && $ullo!="numero_campi"):
+					$valore=dbmmfetch($dbmBIS, $ullo);
+					$cataBIS=unserialize($valore);
+					$prendo_cataBIS[$valore]=$cataBIS[$campo_per_ordinare];		
+				endif;
+				$ullo=dbmmnextkey($dbmBIS,$ullo);
+			endwhile;
+		dbmmclose($dbmBIS);	
+	
+		// ORDINO I DATI in base al valore che hanno in $prendo_cataBIS
+		if (is_array($prendo_cataBIS)):
+			asort($prendo_cataBIS); // li ordino per quello che Ž in valore di $prendo_cataBIS
+		endif;
+	
+		// MOSTRO I DATI
+		$elencati="";
+		if (is_array($prendo_cataBIS)):
+			reset($prendo_cataBIS);
+			$mostro_relazionato="si";
+			while ( list( $key, $val ) = each( $prendo_cataBIS ) ):
+				$cataBIS=unserialize($key);
+								
+				if($cataBIS[$camporelazione]==$IDrelazionato): // prendo solo quelli relazionati
+					include "_cat_".$dbmusatoBIS."_lista.incl";						
+				endif;
+				
+				$elencati++;
+			endwhile;
+			$mostro_relazionato="no";
+		endif;
+		
+		if($elencati==""):
+			$contenuto.="<table><tr><td align=center valign=\"top\" ><span class='testo'>In questo momento il catalogo $dbmusatoBIS e' vuoto</span></td></tr></table>";
+		endif;
+	endif;	
+
+
+?>

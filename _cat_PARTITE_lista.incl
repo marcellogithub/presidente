@@ -1,0 +1,77 @@
+<?php  
+
+// il pezzettino per mostrare il singolo oggetto in una lista al gestore
+//	identico al pubblico solo con lista_gestore scommentato
+// tutti i valori si trovano in $cata[nomecampo]
+
+	$link_gestore="<br><a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato&titolo_della_pagina=$titolo_della_pagina&numero_colonne=$numero_colonne&'>modifica</a>";
+	$link_gestore.=" | <a href='$PHP_SELF?gs=$gs&s=$s&az=svuotarecord&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato&titolo_della_pagina=$titolo_della_pagina&numero_colonne=$numero_colonne&salva1=posizione&'>svuota</a>";
+	$link_gestore.=" | <a href='$PHP_SELF?gs=$gs&s=$s&az=eliminaoggetto&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato&titolo_della_pagina=$titolo_della_pagina&numero_colonne=$numero_colonne&$caso'>elimina</a>";
+	$link_gestore.=" | <a href='$PHP_SELF?gs=$gs&s=$s&az=duplica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato&titolo_della_pagina=$titolo_della_pagina&numero_colonne=$numero_colonne&$caso'>duplica</a>";
+
+	$link_gestore_corto="<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato&'>m</a>";
+	$link_gestore_corto.=" | <a href='$PHP_SELF?gs=$gs&s=$s&az=eliminaoggetto&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato&'>e</a>";
+	$link_gestore_corto.=" | <a href='$PHP_SELF?gs=$gs&s=$s&az=duplica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato&'>d</a>";
+
+	$link_gestore_BIS_corto="<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cataBIS[IDoggetto]&dbmusato=$dbmusatoBIS&'>m</a>";
+	$link_gestore_BIS_corto.=" | <a href='$PHP_SELF?gs=$gs&s=$s&az=eliminaoggetto&IDoggetto=$cataBIS[IDoggetto]&dbmusato=$dbmusatoBIS&'>e</a>";
+	$link_gestore_BIS_corto.=" | <a href='$PHP_SELF?gs=$gs&s=$s&az=duplica&IDoggetto=$cataBIS[IDoggetto]&dbmusato=$dbmusatoBIS&'>d</a>";
+				
+
+	if($mostro_relazionato=="si"):
+		// questo Ž per mostrare i record di DATE relazionati in un altro db
+		// il cata deve chiamarsi cataBIS
+		// il dbmusato deve chiamarsi dbmusatoBIS
+		$cataBIS[titolo]=stripslashes(nl2br($cataBIS[titolo]));
+		$mostro_data=date("d-m-Y", $cataBIS[data]);
+		if($gs!=""):
+			$contenuto.= "&nbsp;&nbsp;&nbsp;$link_gestore_BIS_corto -- <span class=testo>$cataBIS[titolo] mossa $cataBIS[numero_mosse]</span><br>";
+		else:
+			$contenuto.= "&nbsp;&nbsp;&nbsp;<span class=testo>$cataBIS[titolo] mossa $cataBIS[numero_mosse]</span><br>";
+		endif;
+	else:
+		// questo Ž per mostrare i record normalmente
+		$cata[titolo]=stripslashes(nl2br($cata[titolo]));
+		$mostro_data=date("d-m-Y", $cataBIS[data]);
+
+		// PRENDO I DATI AL VOLO
+		if($cata[IDutente]!=""):
+			$dbmTEMP = dbmmopen("dati/UTEN","r");
+				$cataTEMP=unserialize(dbmmfetch($dbmTEMP,$cata[IDutente]));
+				$riferimento = "$cataTEMP[nome], ";
+			dbmmclose($dbmTEMP);	
+		endif;
+			
+		if($cata[numero_mosse]=="0"): // deve ancora cominciare
+			$gioca="<a href=\"gioco_presidente.php?s=$s&gs=$gs&IDoggetto=391&IDpartita=$cata[IDoggetto]\">comincia</a>";
+		else:
+			// trovo l'ultima nota in cui era stato
+			// le mosse si trovano in $cata[sequenza_mosse] separate da *
+			$mosse=explode("*", strrev($cata[sequenza_mosse]));
+			$ultima_nota=strrev($mosse[0]);
+			$gioca="<a href=\"gioco_presidente.php?s=$s&gs=$gs&IDoggetto=$ultima_nota&IDpartita=$cata[IDoggetto]\">continua da $ultima_nota</a>";
+		endif;
+		if($gs!=""):
+			$contenuto.= "
+				<table width='100%'>
+				<tr>
+				<td align=top>
+					$link_gestore_corto -- $riferimento -- $cata[titolo] mossa $cata[numero_mosse] $gioca<br>
+				</td>
+				</tr>
+				</table>
+				";
+		else:
+			$contenuto.= "
+				<table width='100%'>
+				<tr>
+				<td align=top>
+					$riferimento -- $cata[titolo] mossa $cata[numero_mosse] $gioca<br>
+				</td>
+				</tr>
+				</table>
+				";
+		endif;
+	endif;
+?>
+

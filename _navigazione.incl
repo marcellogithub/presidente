@@ -1,0 +1,72 @@
+<?php  
+	// NAVIGAZIONE DEFAULT (italiana) --------- ----------------- ----------------- 
+
+	$colore_link_menu="ffffff";
+	
+	// PRENDO I DATI e li metto in $elenco
+	$dbm = dbmmopen("dati/NAVI","r");
+		$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+		$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+		$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+		$ullo=dbmmfirstkey($dbm);
+		
+		while($ullo!=""):
+			if($ullo!="campi" && $ullo!="tipi" && $ullo!="nomi" && $ullo!="contatore"):
+				$nav=unserialize(dbmmfetch($dbm, $ullo));
+				$parametri="";
+				if(trim($nav[PARAMETRI])!=""):
+					$array=unserialize($nav[PARAMETRI]);
+					while ( list( $key, $val ) = each( $array ) ):
+						$parametri.="$key=$val&";
+					endwhile;
+				endif;	
+				if($nav[POSIZIONE_MENU]>0):
+					if ($nav[BOTTONE_SU]!="" && file_exists("$nav[BOTTONE_SU]")): 
+						if ($nav[BOTTONE_GIU]!="" && file_exists("$nav[BOTTONE_GIU]")): 
+							?>
+							<script>
+							if (document.images) 
+							{
+								var bottone<?php   echo $nav[IDoggetto]; ?>_up = new Image(200,200);
+								bottone<?php   echo $nav[IDoggetto]; ?>_up.src = "<?php   echo $nav[BOTTONE_SU]; ?>";
+								var bottone<?php   echo $nav[IDoggetto]; ?>_over = new Image(200,200);
+								bottone<?php   echo $nav[IDoggetto]; ?>_over.src = "<?php   echo $nav[BOTTONE_GIU]; ?>";
+							}
+							
+							function di(id,name)
+							{
+								if (document.images) 
+								{
+									document.images[id].src=eval(name+".src");
+								}
+							}
+							
+							</script>
+							<?php  
+							$elenco[$nav[POSIZIONE_MENU]]="<a href=\"$nav[LINK_FILE]?s=$s&ln=$ln&gs=$gs&IDpartita=$IDpartita&$parametri\" onMouseOver=\"di('bottone$nav[IDoggetto]', 'bottone$nav[IDoggetto]_over' ); \"  onMouseOut=\"di('bottone$nav[IDoggetto]','bottone$nav[IDoggetto]_up');\"><img name=\"bottone$nav[IDoggetto]\" src=\"$nav[BOTTONE_SU]\" border=\"0\"></a><br>";
+						else:
+							$elenco[$nav[POSIZIONE_MENU]]="<a HREF='$nav[LINK_FILE]?s=$s&ln=$ln&gs=$gs&IDpartita=$IDpartita&$parametri'><img src='$nav[BOTTONE_SU]' border='0'></a>";
+						endif;
+					else:
+						$elenco[$nav[POSIZIONE_MENU]]="<a HREF='$nav[LINK_FILE]?s=$s&ln=$ln&gs=$gs&IDpartita=$IDpartita&$parametri' class=navigazione>$nav[LINK_MENU]</a>";
+					endif;
+				endif;
+			endif;
+			$ullo=dbmmnextkey($dbm,$ullo);
+		endwhile;
+	dbmmclose($dbm);	
+
+	// ORDINO I MODULI in base al valore che hanno in $elenco
+	ksort($elenco); // li ordino per quello che Ž in valore di $elenco
+
+	// MOSTRO I MODULI
+	reset($elenco);
+	$navigazione_orizzontale_template="";
+	$navigazione_verticale_template="<div valign=top>";
+	while ( list( $key, $val ) = each( $elenco ) ):
+			$navigazione_verticale_template.=$val."<br>";
+			$navigazione_orizzontale_template.=$val." <font color=$colore_link_menu>|</font> ";
+	endwhile;
+	$navigazione_orizzontale_template=substr($navigazione_orizzontale_template, 0, -9);
+?>
+

@@ -1,0 +1,8 @@
+[02-Mar-2021 12:52:23 Europe/Rome] PHP Fatal error:  Uncaught Error: Call to undefined function ermeg_replace() in /Library/WebServer/Documents/-sviluppo/presidente/nuovo/gioco_presidente.php:355
+Stack trace:
+#0 {main}
+  thrown in /Library/WebServer/Documents/-sviluppo/presidente/nuovo/gioco_presidente.php on line 355
+[02-Mar-2021 12:56:13 Europe/Rome] PHP Fatal error:  Uncaught Error: Call to undefined function dbmmopen() in /Library/WebServer/Documents/-sviluppo/presidente/nuovo/gestione.php:24
+Stack trace:
+#0 {main}
+  thrown in /Library/WebServer/Documents/-sviluppo/presidente/nuovo/gestione.php on line 24

@@ -1,0 +1,31 @@
+<?php  
+	// RISULTATI: CONTO ----------------------------------------------------
+	// fa il conto dei risultati della ricerca, prepara i link per navigazione
+	// arriva - $gia: numero annunci giˆ visti
+	// arriva - $quanti: quanti annunci vedere volta per volta
+	// esce - $precedenti : link ai precedenti
+	// esce - $inmezzo : la barretta in mezzo
+	// esce - $prossimi : link ai prossimi
+	// esce - $visti : quanti annunci visti in questo giro
+	// esce - $oggettitrovatitotale : numero totale annunci trovati
+	
+	// conto quanti annunci trovati
+	$oggettitrovatitotale=count($keyoggettirilevanza); 
+	
+	// conto quanti annunci totali ($j) e quanti mostro adesso ($visti) (mimando vera visualizzazione)
+	if($oggettitrovatitotale!="0"):
+		if($quanti<10): $quanti=10; endif;
+		$visti=intval($gia)+1;
+		$j=0;
+		while ( list( $codice, $val ) = each( $keyoggettirilevanza ) ):		
+			if( $j>=$gia && $j<($gia+$quanti) && $j<=$oggettitrovatitotale):
+				$visti++;
+			endif;
+			$j++;
+		endwhile;
+		$visti--; // perche' nell'ultimo giro fa un ++ in piu' 
+		if($gia>=$quanti): $precedenti="<span class='testo'><a HREF=$PHP_SELF?$para&az=rispondi&s=$s&campo_per_ordinare=$campo_per_ordinare&dbmusato=$dbmusato&gs=$gs&quanti=$quanti&gia=".($gia-$quanti).">precedenti</a></span>"; endif;
+		if($gia>=$quanti && $visti<$oggettitrovatitotale): $inmezzo="<span class='testo'> | </span>"; endif;
+		if($visti<$oggettitrovatitotale): $prossimi="<span class='testo'><a HREF=$PHP_SELF?$para&az=rispondi&s=$s&campo_per_ordinare=$campo_per_ordinare&dbmusato=$dbmusato&gs=$gs&quanti=$quanti&gia=$visti>prossimi</a></span>"; endif;
+	endif;
+?>

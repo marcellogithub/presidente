@@ -1,0 +1,1789 @@
+<?php  
+
+// _cat_azioni.incl
+// tutte le az che si possono fare su una tabella dbmm
+
+function input_data ($nome_variabile="new_cata", $nome_campo, $attuale=""){
+	// restituisce i tre select per l'input di una data
+	// bisogna dare il nome della variabile (di solito è new_cata), il nome del campo e il valore attuale
+	// DA FARE: gestire il valore nullo, ora al 1 genn 1970
+	
+		//default a oggi
+		if($attuale==""): $attuale=time(); endif;
+		
+		// data attuale
+		$data_giorno=date("d", $attuale); // formato "03" = terzo giorno del mese
+		$data_mese=date("m", $attuale); // formato "05" = maggio
+		$data_anno=date("y", $attuale); // formato "04"
+										
+		// preparo input dei giorni
+		$select_giorno="<OPTION value=\"00\">giorno";
+		for($u=1; $u<32; $u++):
+			$selected=""; $n=$u; if($n=="$data_giorno"): $selected="SELECTED"; endif;
+			$select_giorno.= "<OPTION value=\"$u\" $selected>$u";
+		endfor;
+		$input_giorno="<SELECT NAME=\"".$nome_variabile."_giorno[".$nome_campo."]\" SIZE=1> $select_giorno</SELECT>";
+		
+		// preparo input dei mesi
+		$array_mesi=array ("vuoto", "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"); 
+		$select_mese="<OPTION value=\"0\">mese";
+		for($u=1; $u<12; $u++):
+			$selected=""; $n=$u; if($n==$data_mese): $selected="SELECTED"; 	endif;
+			$select_mese.= "<OPTION value=\"$u\" $selected>$array_mesi[$u]";
+		endfor;
+		$input_mese="<SELECT NAME=\"".$nome_variabile."_mese[".$nome_campo."]\" SIZE=1> $select_mese</SELECT>";
+		
+		// preparo input dell'anno
+		$input_anno="<input NAME=\"".$nome_variabile."_anno[".$nome_campo."]\" value=\"$data_anno\" TYPE=Text SIZE='4 MAXLENGTH='4'>";
+		
+		// metto insieme i pezzettini per la visualizzazione
+		$tre_select=$input_giorno.$input_mese.$input_anno;
+		return $tre_select;
+	}
+
+function select_da_re ($dbm_attuale, $nome_campo, $IDattuale=0 ){
+	// restituisce le option per un select per un campo re
+	// i valori sono presi seguendo le indicazioni del val per il $nome_campo in $dbm_attuale
+	// $IDattuale può essere vuoto, è per avere il select puntato sul valore attuale
+	
+	$dbm_per_select = dbmmopen("dati/$dbm_attuale","r");
+		$v_cata=unserialize(dbmmfetch($dbm_per_select,"valori"));
+	dbmmclose($dbm_per_select);	
+	unset($parametri_relazione);
+	
+	$parametri_relazione=explode("::",$v_cata[$nome_campo]);
+		$dbm_relazionato=$parametri_relazione[0]; // il dbm nel quale sono i record da pescare
+		$campo_relazione=$parametri_relazione[1]; // il campo che dice quali record sono pescabili
+		$operatore_relazione=$parametri_relazione[2]; // il tipo di confronto che si fa uguale, maggiore, diverso etc
+		$parametro_relazione=$parametri_relazione[3]; // il parametro da confrontare
+		$mostro_relazione=$parametri_relazione[4]; // il campo del dbm relazionato da mostrare nel select 
+		
+	$opzioni="<option value=\" \" $sel> </option>"; // il primo è vuoto
+	//trovo tutti gli IDoggetto di $dbm_relazionato che sono relazionabili
+	$array_da_lavorare=file("dati/$dbm_relazionato");
+	while(list($key,$val)=each($array_da_lavorare)):
+		unset($due_pezzi);
+		$due_pezzi=explode("?^?",$val);
+		unset($cataQUI);
+		$cataQUI=unserialize($due_pezzi[1]);
+		
+			// l'$operatore_relazione è sempre "uguale"
+			if($cataQUI[$campo_relazione]=="$parametro_relazione"): 
+				// e li metto come lista_option
+				if ($cataQUI[IDoggetto]==$IDattuale):
+					$sel="selected";
+				else:
+					$sel="";
+				endif;
+				$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+			endif;
+		
+	endwhile;	
+	return $opzioni;
+	}
+
+function dammi_data($timestamp, $formato="cortissima"){
+	// restituisce la stringa con la data in italiano
+	// a secnda di formato richiesto (lunga, corta, cortissima)
+	$mostro_data_giorno_numero=date("d", $timestamp);
+	$mostro_data_giorno_nome=date("l", $timestamp);
+	$mostro_data_mese=date("m", $timestamp);
+	$mostro_data_anno=date("Y", $timestamp);
+	
+	switch($mostro_data_giorno_nome):
+		case "Monday":
+			$mostro_data_giorno_nome_ita="luned&iacute;";
+			$mostro_data_giorno_nome_ita_corto="lun";
+			break;
+		case "Tuesday":
+			$mostro_data_giorno_nome_ita="marted&iacute;";
+			$mostro_data_giorno_nome_ita_corto="mar";
+			break;
+		case "Wendsday":
+			$mostro_data_giorno_nome_ita="mercoled&iacute;";
+			$mostro_data_giorno_nome_ita_corto="mer";
+			break;
+		case "Thursday":
+			$mostro_data_giorno_nome_ita="gioved&iacute;";
+			$mostro_data_giorno_nome_ita_corto="gio";
+			break;
+		case "Friday":
+			$mostro_data_giorno_nome_ita="venerd&iacute;";
+			$mostro_data_giorno_nome_ita_corto="ven";
+			break;
+		case "Saturday":
+			$mostro_data_giorno_nome_ita="sabato;";
+			$mostro_data_giorno_nome_ita_corto="sab";
+			break;
+		case "Sunday":
+			$mostro_data_giorno_nome_ita="domenica;";
+			$mostro_data_giorno_nome_ita_corto="dom";
+			break;
+		default:
+			$mostro_data_giorno_nome_ita="un giorno";
+			$mostro_data_giorno_nome_ita_corto="boh";
+	endswitch;
+	
+	$array_mesi=array ("vuoto", "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"); 
+
+	$mostro_data_lunga="$mostro_data_giorno_nome_ita $mostro_data_giorno_numero $array_mesi[$mostro_data_mese] $mostro_data_anno";
+	$mostro_data_corta="$mostro_data_giorno_nome_ita_corto $mostro_data_giorno_numero/$mostro_data_mese/$mostro_data_anno";
+	$mostro_data_cortissima="$mostro_data_giorno_numero/$mostro_data_mese/$mostro_data_anno";
+	
+	switch($formato):
+		case "cortissima":
+			return($mostro_data_cortissima);
+			break;
+		case "corta":
+			return($mostro_data_corta);
+			break;
+		case "lunga":
+			return($mostro_data_lunga);
+			break;
+		default:
+			return("errore nel formato data");
+	endswitch;
+			
+	}
+
+
+/*
+// GESTIONE: METTI/CAMBIA FOTO -----------------------------------------------------
+if($az=="singolo" && $gs!=""):
+	$az="modifica";
+endif;
+*/
+
+// GESTIONE: METTI/CAMBIA FOTO -----------------------------------------------------
+if($az=="cambiafoto"):
+// prepara un form per inviare una foto
+// arriva:
+//			az - cambiafoto
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+//			$campofoto - il campo dove mettere la foto
+//			IDoggetto - l'oggetto che contiene la foto
+// esce:
+// 		az - controlla - se invia una foto
+
+	$contenuto.= "<span class='titolo'><b>Immissione foto</b></span>";
+	//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+		$contenuto.= "<br>";
+		
+	// PRENDO I DATI
+	$dbm = dbmmopen("dati/$dbmusato","r");
+		$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+		$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+		$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+		$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+		$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+	dbmmclose($dbm);	
+
+	$contenuto.= "<div align=center>";
+	$contenuto.= "<form ENCTYPE='multipart/form-data' action='$PHP_SELF' method='POST'>";
+		for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+ 			$nome_campo=$c_cata[$j];
+			$cata[$nome_campo]=stripslashes($cata[$nome_campo]);
+			$cata[$nome_campo]=ermeg_replace("\"", "''", $cata[$nome_campo]);
+			$contenuto.= "<input NAME=\"new_cata[$nome_campo]\" value=\"$cata[$nome_campo]\" TYPE=hidden>";
+		endfor;
+		
+		if(trim($cata[$campofoto])!=""): srand((double)microtime()*1000000); $randval = rand(); $contenuto.= "<img src='$cata[$campofoto]?$randval'><br><br>"; endif;
+		$contenuto.= "<br><input NAME='$campofoto' value=\"$cata[$campofoto]\" TYPE=file SIZE='20 MAXLENGTH='80'>"; 
+		
+	$contenuto.= "<input type='hidden' name='dbmusato' value='$dbmusato'>";
+	$contenuto.= "<input type='hidden' name='gs' value='$gs'>";
+	$contenuto.= "<input type='hidden' name='s' value='$s'>";
+	$contenuto.= "<input type='hidden' name='az' value='controlla'>";
+	$contenuto.= "<input type='submit' value=' Invia '>";
+	$contenuto.= "</form>";
+	
+	$contenuto.= "</div>";
+	
+	html($contenuto, $messaggio);
+endif;
+
+
+// GESTIONE - EFFETTUO CONTROLLO (prima di immissione) --------------------------
+if($az=="controlla"): //non faccio controlli al momento
+// controlla che i valori inviati siano a posto
+// arriva:
+//			az - controlla
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+//			IDoggetto - l'oggetto sul quale operare
+//			eventuale - $campofoto - il campo dove mettere la foto
+//			$new_cata[IDoggetto] - i nuovi valori
+
+	//qui ci sarebbe il controllo
+	//che blocca immissione
+	// altrimenti continuo con immissione
+	
+// GESTIONE - IMMETTO valori  ---------------------------------------------------
+	//STABILISCO QUALE ID USARE
+	if($new_cata[IDoggetto]==""):	// se é un nuovo oggetto
+		$dbm = dbmmopen("dati/$dbmusato","w");
+			$numeroquesto=1+dbmmfetch($dbm,"contatore");
+			dbmmreplace($dbm,"contatore",$numeroquesto);
+		dbmmclose($dbm);
+		$new_cata[IDoggetto]=$numeroquesto; 
+	endif;
+	
+	$dbm = dbmmopen("dati/$dbmusato","w");
+		$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+		$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+		$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+		$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+		if($new_cata[IDoggetto]!=""):
+			$cata=unserialize(dbmmfetch($dbm,$new_cata[IDoggetto]));
+		endif;
+	dbmmclose($dbm);	
+	
+
+	for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+ 		$nome_campo=$c_cata[$j];
+		if($t_cata[$nome_campo]=="f"): 
+		
+			//UPLOAD FOTO 
+			if($$nome_campo!="" ):
+				if($$nome_campo == "none"): 						// vedo se esiste il file
+					$messaggio="L'immagine precedente non viene modificata.";
+					//$pesoqui=filesize($$nome_campo); //togliere
+				//elseif (filesize($$nome_campo)>25000):
+					//$messaggio="L'immagine deve essere piu' piccola di 25 Kb.";
+				else:
+					$dest = "imma/".$dbmusato."_".$new_cata[IDoggetto]."_".$nome_campo."_".$casocorto.".jpg";					// scrivo la destinazione del file, con nome locale sicuro
+					if(!copy($$nome_campo,$dest)):				// copia il file temporaneo alla nostra destinazione, e controlla che sia riuscito
+						$contenuto.="Errore durante l'upload del file.";
+					else:
+						$new_cata[$nome_campo]="$dest";		// il campo dove é salvato il path dell'immagine
+					endif;
+					unlink($$nome_campo);                     		// cancella il file temporaneo
+					if( file_exists($cata[$nome_campo]) ):
+							unlink($cata[$nome_campo]);           // cancella la vecchia foto
+					endif;
+					if ($messaggio!=""):
+						echo "<script>alert(\"".$messaggio."\");</script>";
+					endif;
+				endif;
+			endif;
+
+			if (trim($new_cata[$nome_campo])=="none"):
+				$new_cata[$nome_campo]="";	//evito che nel dbm venga scritto none se non inserisco una foto
+			endif;
+		endif;
+
+		if($t_cata[$nome_campo]=="l"): 
+			
+			//UPLOAD FILE 
+			if($$nome_campo!="" ):
+				if($$nome_campo == "none"): 						// vedo se esiste il file
+					$messaggio="L'immagine precedente non viene modificata.";
+					//$pesoqui=filesize($$nome_campo); //togliere
+				//elseif (filesize($$nome_campo)>25000000):
+					//$messaggio="L'immagine deve essere piu' piccola di 2,5 mb.";
+				else:
+					$dest = "imma/".$new_cata[IDoggetto]."_".$nome_campo.".pdf";					// scrivo la destinazione del file, con nome locale sicuro
+					if(!copy($$nome_campo,$dest)):				// copia il file temporaneo alla nostra destinazione, e controlla che sia riuscito
+						$messaggio="Errore durante l'upload del file.";
+					else:
+						$new_cata[$nome_campo]="$dest";		// il campo dove é salvato il path dell'immagine
+					endif;
+					unlink($$nome_campo);                     		// cancella il file temporaneo
+					if ($messaggio!=""):
+						echo "<script>alert(\"".$messaggio."\");</script>";
+					endif;
+				endif;
+			endif;
+
+			if (trim($new_cata[$nome_campo])=="none"):
+				$new_cata[$nome_campo]="";	//evito che nel dbm venga scritto none se non inserisco una foto
+			endif;
+		endif;
+
+		if($t_cata[$nome_campo]=="d"): 
+			// sono i campi data che può cambiare l'utente
+			// arrivano tre pezzi, monto e salvo il timestamp 
+			$timestamp_da_salvare=mktime(0, 0, 0, $new_cata_mese[$nome_campo], $new_cata_giorno[$nome_campo], $new_cata_anno[$nome_campo]); // ore-minuti-secondi-mese-giorno-anno
+			$new_cata[$nome_campo]=$timestamp_da_salvare;
+		endif;
+
+		/*
+		if($t_cata[$nome_campo]=="d"): 
+			// sono i campi data che può cambiare l'utente
+			$new_cata[$nome_campo]=$new_cata_giorno[$nome_campo]."::".$new_cata_mese[$nome_campo]."::".$new_cata_anno[$nome_campo];
+		endif;
+		*/
+
+		if($t_cata[$nome_campo]=="D"): 
+			// campo data ad aggiornamento automatico, è il timestamp
+			$new_cata[$nome_campo]=time();
+		endif;
+
+		if($t_cata[$nome_campo]=="sc"):	
+			//il select che permette dei valori custom
+			// se new_cata_custom ha un valore viene usato questo
+			if ($new_cata_custom[$nome_campo]!=""):
+				$new_cata[$nome_campo]=$new_cata_custom[$nome_campo];
+			endif;
+		endif;
+
+	endfor;
+		
+	// IMMISSIONE DATI
+	$dbm = dbmmopen("dati/$dbmusato","w");
+		dbmmreplace($dbm, $new_cata[IDoggetto], serialize($new_cata));  
+	dbmmclose($dbm);	
+			
+	$contenuto.= "<BR><B>valori aggiornati</B><BR><hr>";
+	$az="modifica"; // così la edita
+	$IDoggetto=$new_cata[IDoggetto];
+	$dbmusato=$dbmusato;
+	$modifica_effettuata="fatta";
+		
+endif;
+
+// GESTIONE: DUPLICA IDOGGETTO -----------------------------------------------------	
+if($az=="duplica"):
+// crea form per nuovo oggetto
+// arriva:
+//			az - duplica
+//			IDoggetto - oggetto da duplicare
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+// esce:
+// 		az - controlla - quando invia i dati per immissione
+
+	$contenuto.= "<span class='titolo'><b>Duplica record in $dbmusato</b></span>";
+	//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+	$contenuto.= "<hr>
+			<a href='$PHP_SELF?gs=$gs&s=$s&az=lista&dbmusato=$dbmusato'>vai all'elenco</a>
+			<hr>";
+
+	// echo "$dbmusato<br>";//togliere
+
+	// PRENDO I DATI
+	$dbm = dbmmopen("dati/$dbmusato","r");
+		$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+		$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+		$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+		$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+		$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+	dbmmclose($dbm);	
+
+	$contenuto.= "<div align=right>";
+	$contenuto.= "<form ENCTYPE='multipart/form-data' action='$PHP_SELF' method='POST'>";
+	$contenuto.= "<table border='0'>";
+		
+		for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+ 			$nome_campo=$c_cata[$j];
+			$cata[$nome_campo]=stripslashes($cata[$nome_campo]);
+
+			// visualizzo IDoggetto
+			if($nome_campo=="IDoggetto"):  $contenuto.= "<tr><td valign=top align=right colspan=2>IDoggetto: da assegnare<input NAME='new_cata[$nome_campo]' value='' TYPE='hidden'></td></tr>"; endif;
+			
+			// visualizzo data creazione
+			if($t_cata[$nome_campo]=="Dc"):  $cata[$nome_campo]=stripslashes($cata[$nome_campo]); $timestamp_adesso=time(); $contenuto_testo.= "<tr><td valign=top align=right colspan=2>Data creazione: da assegnare<input NAME=\"new_cata[$nome_campo]\" value='$timestamp_adesso' TYPE='hidden'></td></tr>"; endif;
+
+			// visualizzo data modifica
+			if($nome_campo[$nome_campo]=="DATA_modifica"):  $cata[$nome_campo]=stripslashes($cata[$nome_campo]); $timestamp_adesso=time(); $contenuto_testo.= "<tr><td valign=top align=right colspan=2>Data modifica: da assegnare<input NAME=\"new_cata[$nome_campo]\" value='$timestamp_adesso' TYPE='hidden'></td></tr>"; endif;
+
+			// visualizzo ultimo utente
+			if($t_cata[$nome_campo]=="ut"):  $cata[$nome_campo]=stripslashes($cata[$nome_campo]); $contenuto_testo.= "<tr><td valign=top align=right colspan=2>Ultimo utente: $gs<input NAME=\"new_cata[$nome_campo]\" value='$gs' TYPE='hidden'></td></tr>"; endif;
+
+			// visualizzo campo di testo
+			if($t_cata[$nome_campo]=="t" && $nome_campo!="IDoggetto"):  $contenuto.= "<tr><td valign=top>$nome_campo: </td><td valign=top><input NAME='new_cata[$nome_campo]' value='$cata[$nome_campo]' TYPE=Text SIZE='40 MAXLENGTH='80'></td></tr>"; endif;
+
+			// visualizzo campo select
+			if($t_cata[$nome_campo]=="s"):
+				$opzioni="";
+				$lista_option=explode("::",$v_cata[$nome_campo]);
+				//$lista_option[]=$cata[$nome_campo];
+				for ($k=0;$k<count($lista_option);$k++):
+					if(trim($lista_option[$k])!=""):
+						if (trim($lista_option[$k])==$cata[$nome_campo]):
+							$sel="selected";
+						else:
+							$sel="";
+						endif;
+						$opzioni=$opzioni."<option value=\"$lista_option[$k]\" $sel>$lista_option[$k]</option>";
+					endif;
+				endfor;				
+				$opzioni="<option value=\"$cata[$nome_campo]\" selected>$cata[$nome_campo]</option>".$opzioni;
+				$opzioni="<option value=\"\" $sel></option>".$opzioni;
+				$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><select NAME=\"new_cata[$nome_campo]\"> $opzioni</select><input NAME=\"new_cata_custom[$nome_campo]\" value=\"\" TYPE=Text SIZE='20' MAXLENGTH='80'> 
+							<a href='$PHP_SELF?az=modifica_select&dbmusato=$dbmusato&IDoggetto=$cata[IDoggetto]&nome_campo=$nome_campo&s=$s&gs=$gs'>modifica</a> </td></tr>"; 
+				//$contenuto.= "<tr><td valign=top>$nome_campo: </td><td valign=top><input NAME='duplica' value='$nome_campo' TYPE='hidden'><input NAME='duplica_id' value='$IDoggetto' TYPE='hidden'></td></tr>"; 
+			endif;
+
+			// visualizzo campo checkbox
+			if($t_cata[$nome_campo]=="c"):  
+				if (trim($cata[$nome_campo])=="on"):
+					$chk="checked";
+				else:
+					$chk="";
+				endif;
+				$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><input type=checkbox NAME=\"new_cata[$nome_campo]\" $chk></td></tr>"; 
+			endif;
+
+			// visualizzo campo radiobutton
+			if($t_cata[$nome_campo]=="r"):  
+				$lista_option=explode("::",$v_cata[$nome_campo]);
+				$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top>";
+				for ($k=0;$k<count($lista_option);$k++):
+					if(trim($lista_option[$k])!=""):
+						if (trim($lista_option[$k])== $cata[$nome_campo]):
+							$chk="checked";
+						else:
+							$chk="";
+						endif;
+						$contenuto.= " $lista_option[$k] : <input type=radio NAME=\"new_cata[$nome_campo]\" value=\"$lista_option[$k]\" $chk><br>";
+					endif;
+				endfor;				
+				$contenuto.= "</td></tr>"; 
+			endif;
+
+			// visualizzo campo di box testo
+			if($t_cata[$nome_campo]=="b"):  $contenuto.= "<tr><td valign=top>$nome_campo: </td><td valign=top><TEXTAREA NAME='new_cata[$nome_campo]' ROWS=5 COLS=50 WRAP=Virtual>$cata[$nome_campo]</TEXTAREA></td></tr>"; endif;
+			
+			// visualizzo campo con foto
+			if($t_cata[$nome_campo]=="f"):
+				$contenuto.= "<tr><td valign=top>$nome_campo: </td><td valign=top><input NAME='new_cata[$nome_campo]' value='$cata[$nome_campo]' TYPE=hidden>"; 
+				if($cata[$nome_campo]!=""):
+					// calcolo la foto piccola	
+					settype($cata[$nome_campo], "string");
+					$urlfoto="$cata[$nome_campo]";
+					if(file_exists($urlfoto) && trim($urlfoto)!=""):
+						$imagesize = GetImageSize("$urlfoto");
+						$maxwidth=120;
+						$maxheight=120;
+						$percentuale=100;
+						if($imagesize[0]>$maxwidth): $percentuale=round(($maxwidth / $imagesize[0]) * 100); endif;
+						if($imagesize[1]>$maxheight): $percentuale=round(($maxheight / $imagesize[1]) * 100); endif;
+						$pixelgiustiwidth=round(($percentuale * $imagesize[0]) / 100);
+						$pixelgiustiheight=round(($percentuale * $imagesize[1]) / 100);
+						srand((double)microtime()*1000000); $randval = rand();
+						$contenuto.= "<img SRC='$urlfoto?$randval' width='$pixelgiustiwidth' height='$pixelgiustiheight' HSPACE='10' VSPACE='3' BORDER='0'><br>";
+					endif;
+					$contenuto.= "<a href='$PHP_SELF?az=cambiafoto&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>cambia foto</a>&nbsp;|&nbsp;";
+					$contenuto.= "<a href='$PHP_SELF?az=eliminafoto&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>elimina foto</a><br></td></tr>";
+				else:
+					$contenuto.= "<a href='$PHP_SELF?az=cambiafoto&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>inserisci foto</a></td></tr> ";				
+				endif;
+			endif;
+
+			// visualizzo campo con file
+			if($t_cata[$nome_campo]=="l"):
+				$contenuto.= "<tr><td valign=top>$nome_campo: </td><td valign=top><input NAME='new_cata[$nome_campo]' value='$cata[$nome_campo]' TYPE=hidden>"; 
+				if($cata[$nome_campo]!=""):
+					$contenuto.= "<a href='$PHP_SELF?az=cambiafile&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>cambia file</a>&nbsp;|&nbsp;";
+					$contenuto.= "<a href='$PHP_SELF?az=eliminafile&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>elimina file</a><br></td></tr>";
+				else:
+					$contenuto.= "<a href='$PHP_SELF?az=cambiafile&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>inserisci file</a></td></tr> ";				
+				endif;
+			endif;
+		
+			// duplico campo array
+			if($t_cata[$nome_campo]=="a"):
+ 				$contenuto.= "<tr><td valign=top>&nbsp;</td><td valign=top><input NAME='duplica' value='$nome_campo' TYPE='hidden'><input NAME='duplica_id' value='$IDoggetto' TYPE='hidden'>&nbsp;</td></tr>"; 
+			endif;
+
+			// visualizzo campo select | e lo mantengo col campo hidden 
+			if($t_cata[$nome_campo]=="a"): 
+				$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><a href='$PHP_SELF?az=modifica_array&dbmusato=$dbmusato&IDoggetto=$cata[IDoggetto]&nome_campo=$nome_campo&s=$s&gs=$gs'>modifica</a><input NAME='duplica' value='$nome_campo' TYPE='hidden'><input NAME='duplica_id' value='$IDoggetto' TYPE='hidden'></td></tr>"; 
+			endif;
+			
+			// visualizzo campo con data (data che viene immessa dall'utente)
+			// è registrato un timestamp
+			if($t_cata[$nome_campo]=="d"):
+
+				// rendo leggibile il timestamp
+				$data_giorno=date("d", $cata[$nome_campo]); // formato "03" = terzo giorno del mese
+				$data_mese=date("m", $cata[$nome_campo]); // formato "05" = maggio
+				$data_anno=date("y", $cata[$nome_campo]); // formato "04"
+												
+				// preparo input dei giorni
+				$select_giorno="<OPTION value=\"00\">giorno";
+				for($u=1; $u<32; $u++):
+					$selected=""; $n=$u; if($n=="$data_giorno"): $selected="SELECTED"; endif;
+					$select_giorno.= "<OPTION value=\"$u\" $selected>$u";
+				endfor;
+				$input_giorno="<SELECT NAME=\"new_cata_giorno[$nome_campo]\" SIZE=1> $select_giorno</SELECT>";
+				
+				// preparo input dei mesi
+				$array_mesi=array ("vuoto", "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"); 
+				$select_mese="<OPTION value=\"0\">mese";
+				for($u=1; $u<=12; $u++):
+					$selected=""; $n=$u; if($n==$data_mese): $selected="SELECTED"; 	endif;
+					$select_mese.= "<OPTION value=\"$u\" $selected>$array_mesi[$u]";
+				endfor;
+				$input_mese="<SELECT NAME=\"new_cata_mese[$nome_campo]\" SIZE=1> $select_mese</SELECT>";
+				
+				// preparo input dell'anno
+				$input_anno="<input NAME=\"new_cata_anno[$nome_campo]\" value=\"$data_anno\" TYPE=Text SIZE='4 MAXLENGTH='4'>";
+				
+				// metto insieme i pezzettini per la visualizzazione
+				$contenuto.= "
+					<tr>
+					<td valign=top><span class=testo>$nome_campo: </span></td>
+					<td valign=top>
+						$input_giorno
+						$input_mese
+						$input_anno
+					</td>
+					</tr>
+					"; 
+			endif;
+			
+			// visualizzo campo relazionato o relativo
+			if($t_cata[$nome_campo]=="re" || $t_cata[$nome_campo]=="rl"):
+				unset($parametri_relazione);
+				$parametri_relazione=explode("::",$v_cata[$nome_campo]);
+					$dbm_relazionato=$parametri_relazione[0]; // il dbm nel quale sono i record da pescare
+					$campo_relazione=$parametri_relazione[1]; // il campo che dice quali record sono pescabili
+					$operatore_relazione=$parametri_relazione[2]; // il tipo di confronto che si fa uguale, maggiore, diverso etc
+					$parametro_relazione=$parametri_relazione[3]; // il parametro da confrontare
+						if($t_cata[$nome_campo]=="rl"): $parametro_relazione=$cata[$parametro_relazione]; endif;// il parametro da confrontare
+					$mostro_relazione=$parametri_relazione[4]; // il campo del dbm relazionato da mostrare nel select 
+				$opzioni="<option value=\" \" $sel> </option>"; // il primo è vuoto
+				//trovo tutti gli IDoggetto di $dbm_relazionato che sono relazionabili
+				$array_da_lavorare=file("dati/$dbm_relazionato");
+				while(list($key,$val)=each($array_da_lavorare)):
+					unset($due_pezzi);
+					$due_pezzi=explode("?^?",$val);
+					unset($cataQUI);
+					$cataQUI=unserialize($due_pezzi[1]);
+					
+					if($operatore_relazione=="uguale"):
+						if($cataQUI[$campo_relazione]=="$parametro_relazione"): 
+							// e li metto come lista_option
+							if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+						endif;
+					endif;
+					if($operatore_relazione=="contenuto"):
+						if(ermegi($cataQUI[$campo_relazione], $parametro_relazione)): 
+							// e li metto come lista_option
+							if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+						endif;
+					endif;
+					if($operatore_relazione=="maggiore"):
+						if($cataQUI[$campo_relazione]>$parametro_relazione): 
+							// e li metto come lista_option
+							if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+						endif;
+					endif;
+					if($operatore_relazione=="minore"):
+						if($cataQUI[$campo_relazione]<$parametro_relazione): 
+							// e li metto come lista_option
+							if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+						endif;
+					endif;
+					
+				endwhile;	
+				$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><select NAME=\"new_cata[$nome_campo]\"> $opzioni</select> 
+						</td></tr>"; 
+			endif;
+
+
+		endfor;
+
+	$contenuto.= "<tr><td valign=top colspan=2>";
+	$contenuto.= "<input type='hidden' name='dbmusato' value='$dbmusato'>";
+	$contenuto.= "<input type='hidden' name='s' value='$s'>";
+	$contenuto.= "<input type='hidden' name='gs' value='$gs'>";
+	$contenuto.= "<input type='hidden' name='az' value='controlla'>";
+	$contenuto.= "<input type='submit' value=' Invia'>";
+	$contenuto.= "</td></tr>";
+	$contenuto.= "</table>";
+	$contenuto.= "</form>";
+	$contenuto.= "</div>";
+		
+	html($contenuto, $messaggio);
+endif;
+
+// GESTIONE: ELIMINA FILE -----------------------------------------------------
+if($az=="eliminafile" && $gs!=""):
+// chiede conferma e in caso positivo elimina il file del $campofoto di $IDoggetto
+// arriva:
+//			az - eliminafile
+//			azbis - eliminafiledavvero (quando ha confermato eliminazione)
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+//			$campofoto - il campo con il file da elimlinare
+//			IDoggetto - l'oggetto che contiene la foto
+
+	if($azbis=="eliminafiledavvero" && $gs!=""): // ha confermato l'eliminazione del file
+	
+		$contenuto.= "<span class='titolo'><b>Eliminazione file effettuata</b></span>";
+		//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+			
+		// PRENDO I DATI
+		$dbm = dbmmopen("dati/$dbmusato","w");
+			$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+			$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+			$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+			$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+			$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+				unlink($cata[$campofoto]);  
+				$cata[$campofoto]="";
+			dbmmreplace($dbm,"$IDoggetto", serialize($cata));  
+		dbmmclose($dbm);	
+
+		html($contenuto, $messaggio);
+		
+	else: // la prima volta chiedo conferma
+	
+		$contenuto.= "<span class='titolo'><b>Eliminazione file: richiesta conferma</b></span>";
+		//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+		$contenuto.= "<hr>
+				<a href=\"javascript:history.go(-1);\">torna indietro</a>&nbsp;|&nbsp;
+				<a href='$PHP_SELF?gs=$gs&s=$s&az=nuovo&dbmusato=$dbmusato'>nuovo oggetto</a>
+				<hr>";
+		$contenuto.= "Confermi la eliminazione di:<br><br>";
+			
+		// PRENDO I DATI
+		$dbm = dbmmopen("dati/$dbmusato","r");
+			$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+			$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+			$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+			$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+			$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+		dbmmclose($dbm);	
+	
+		$contenuto.= "<div align=center>";
+			
+			$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&azbis=eliminafiledavvero&az=eliminafile&campofoto=$campofoto&IDoggetto=$IDoggetto&dbmusato=$dbmusato'><B>SI</B> lo elimino</a>&nbsp;|&nbsp;";
+			$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'><B>NO</B> lo tengo</a>";
+	
+		$contenuto.= "</div>";
+			
+		html($contenuto, $messaggio);
+	endif;
+endif;
+
+// GESTIONE: ELIMINA FOTO -----------------------------------------------------
+if($az=="eliminafoto" && $gs!=""):
+// chiede conferma e in caso positivo elimina la foto del $campofoto di $IDoggetto
+// arriva:
+//			az - eliminafoto
+//			azbis - eliminafotodavvero (quando ha confermato eliminazione)
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+//			$campofoto - il campo con la foto da elimlinare
+//			IDoggetto - l'oggetto che contiene la foto
+
+	if($azbis=="eliminafotodavvero" && $gs!=""): // ha confermato l'eliminazione della foto
+	
+		$contenuto.= "<span class='titolo'><b>Eliminazione foto effettuata</b></span>";
+		//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+		$contenuto.= "<br>";
+			
+		// PRENDO I DATI
+		$dbm = dbmmopen("dati/$dbmusato","w");
+			$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+			$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+			$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+			$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+			$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+				unlink($cata[$campofoto]);  
+				$cata[$campofoto]="";
+			dbmmreplace($dbm,"$IDoggetto", serialize($cata));  
+		dbmmclose($dbm);
+			
+
+		$contenuto.= "<hr>";
+		
+		$az="modifica"; // così va in modifica
+		
+	else: // la prima volta chiedo conferma
+	
+		$contenuto.= "<span class='titolo'><b>Eliminazione foto: richiesta conferma</b></span>";
+		//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+		$contenuto.= "<hr>
+				<a href=\"javascript:history.go(-1);\">torna indietro</a>&nbsp;|&nbsp;
+				<a href='$PHP_SELF?gs=$gs&s=$s&az=nuovo&dbmusato=$dbmusato'>nuovo oggetto</a>
+				<hr>";
+		$contenuto.= "Confermi la eliminazione di:<br><br>";
+			
+		// PRENDO I DATI
+		$dbm = dbmmopen("dati/$dbmusato","r");
+			$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+			$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+			$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+			$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+			$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+		dbmmclose($dbm);	
+	
+		$contenuto.= "<div align=center>";
+			
+			srand((double)microtime()*1000000); $randval = rand(); $contenuto.= "<img src='$cata[$campofoto]?'><br>";
+	
+			$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&azbis=eliminafotodavvero&az=eliminafoto&campofoto=$campofoto&IDoggetto=$IDoggetto&dbmusato=$dbmusato'><B>SI</B> la elimino</a>&nbsp;|&nbsp;";
+			$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'><B>NO</B> la tengo</a>";
+	
+		$contenuto.= "</div>";
+			
+		html($contenuto, $messaggio);
+	endif;
+endif;
+
+// GESTIONE: ELIMINA SINGOLO IDOGGETTO -----------------------------------------------------
+if($az=="eliminaoggetto" && $gs!=""):
+// chiede conferma e in caso positivo elimina $IDoggetto
+// arriva:
+//			az - eliminaoggetto
+//			azbis - eliminaoggettodavvero (se conferma)
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+//			IDoggetto - l'oggetto da eliminare
+
+	if($azbis=="eliminaoggettodavvero" && $gs!=""): // ha confermato eliminazione
+	
+		$contenuto.= "<span class='titolo'><b>Eliminazione effettuata</b></span>";
+		//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+		$contenuto.= "<br>";
+		$contenuto.= "Eliminato il record:<br><br>";
+			
+		// PRENDO I DATI
+		$dbm = dbmmopen("dati/$dbmusato","w");
+			$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+			$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+			$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+			$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+			$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+				// elimino le foto 
+				for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+		 			$nome_campo=$c_cata[$j];
+					if($t_cata[$nome_campo]=="f" && (file_exists($cata[$nome_campo])) ):
+						unlink($cata[$nome_campo]);  
+					endif;
+				endfor;
+				dbmmdelete($dbm, $cata[IDoggetto]);
+		dbmmclose($dbm);	
+	
+		$contenuto.= "<div align=right>";
+			
+			for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+	 			$nome_campo=$c_cata[$j];
+	
+				// visualizzo campo di testo
+				if($t_cata[$nome_campo]=="t"):  $contenuto.= "$nome_campo: $cata[$nome_campo]<br>"; endif;
+				
+				// visualizzo campo con foto
+				if($t_cata[$nome_campo]=="f"):
+					// calcolo la foto piccola	
+					settype($cata[$nome_campo], "string");
+					$urlfoto="$cata[$nome_campo]";
+					if(file_exists($urlfoto) && trim($urlfoto)!=""):
+						$imagesize = GetImageSize("$urlfoto");
+						$maxwidth=120;
+						$maxheight=120;
+						$percentuale=100;
+						if($imagesize[0]>$maxwidth): $percentuale=round(($maxwidth / $imagesize[0]) * 100); endif;
+						if($imagesize[1]>$maxheight): $percentuale=round(($maxheight / $imagesize[1]) * 100); endif;
+						
+						$pixelgiustiwidth=round(($percentuale * $imagesize[0]) / 100);
+						$pixelgiustiheight=round(($percentuale * $imagesize[1]) / 100);
+						srand((double)microtime()*1000000); $randval = rand();
+						$contenuto.= "<img SRC='$urlfoto?$randval' width='$pixelgiustiwidth' height='$pixelgiustiheight' HSPACE='10' VSPACE='3' BORDER='0'><br>";
+					endif;
+				endif;
+					
+			endfor;
+	
+		$contenuto.= "</div>";
+
+		$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=lista&dbmusato=$dbmusato'>torna alla lista</a><br>"; // versione oer catalogo.php
+		html($contenuto, $messaggio);
+	
+	else: // la prima volta che arriva chiedo conferma
+
+			
+		// PRENDO I DATI
+		$dbm = dbmmopen("dati/$dbmusato","r");
+			$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+			$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+			$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+			$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+			$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+		dbmmclose($dbm);	
+	
+		$contenuto_testo.= "<div align=right>";
+			
+			for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+	 			$nome_campo=$c_cata[$j];
+				if($t_cata[$nome_campo]=="t"):  $contenuto_testo.= "$nome_campo: $cata[$nome_campo]<br>"; endif;
+				if($t_cata[$nome_campo]=="f"):  srand((double)microtime()*1000000); $randval = rand(); $contenuto_testo.= "<img src='$cata[$nome_campo]?$randval'><br>"; endif;
+			endfor;
+			
+			$contenuto_testo.= "<br><br>";
+	
+			$contenuto_testo.= "<a href='$PHP_SELF?gs=$gs&s=$s&azbis=eliminaoggettodavvero&az=eliminaoggetto&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'><B>SI</B> lo elimino</a>&nbsp;|&nbsp;";
+			$contenuto_testo.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'><B>NO</B> lo tengo</a>";
+	
+		$contenuto_testo.= "</div>";
+	
+		$contenuto_intestazione.= "<span class='titolo'><b>Eliminazione: richiesta conferma</b></span>";
+		$contenuto_intestazione.= "<hr>";
+		$contenuto_intestazione.= "<a href=\"javascript:history.go(-1);\">torna indietro</a>&nbsp;|&nbsp;";
+		$contenuto_intestazione.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=nuovo&dbmusato=$dbmusato'>nuovo oggetto</a>";
+		$contenuto_intestazione.= "<hr>";
+		$contenuto_intestazione.= "Confermi la eliminazione di:<br><br>";
+
+		
+		$contenuto.= $contenuto_intestazione.$contenuto_testo;
+	
+		html($contenuto, $messaggio);
+	endif;
+endif;
+
+// GESTIONE: NUOVO IDOGGETTO -----------------------------------------------------	
+if($az=="nuovo"):
+// crea form per nuovo oggetto
+// arriva:
+//			az - nuovo
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+// esce:
+// 		az - controlla - quando invia i dati per immissione
+
+
+	// parte centrale della pagina
+	
+	// PRENDO I DATI
+	$dbm = dbmmopen("dati/$dbmusato","r");
+		$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+		$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+		$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+		$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+	dbmmclose($dbm);	
+
+	$contenuto_testo.= "<div align=right>";
+	$contenuto_testo.= "<form ENCTYPE='multipart/form-data' action='$PHP_SELF' method='POST'>";
+	$contenuto_testo.= "<table border='0'>";
+		
+		for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+ 			$nome_campo=$c_cata[$j];
+			if($nome_campo=="IDoggetto"):  $contenuto_testo.= "<tr><td valign=top align=right colspan=2>IDoggetto: da assegnare <input NAME=\"new_cata[$nome_campo]\" value='' TYPE='hidden'></td></tr>"; endif;
+			if($t_cata[$nome_campo]=="ut"):  $contenuto_testo.= "<tr><td valign=top align=right colspan=2>Ultimo utente: da assegnare <input NAME=\"new_cata[$nome_campo]\" value='$gs' TYPE='hidden'></td></tr>"; endif;
+			if($t_cata[$nome_campo]=="Dc"):  $cata[$nome_campo]=stripslashes($cata[$nome_campo]); $timestamp_adesso=time(); $contenuto_testo.= "<input NAME=\"new_cata[$nome_campo]\" value='$timestamp_adesso' TYPE='hidden'>"; endif; // data di creazione, viene creata solo qui, poi al massimo viene vista o mantenuta
+			if($t_cata[$nome_campo]=="t" && $nome_campo!="IDoggetto"):  $cata[$nome_campo]=stripslashes($cata[$nome_campo]); $contenuto_testo.= "<tr><td valign=top>$nome_campo: </td><td valign=top><input NAME=\"new_cata[$nome_campo]\" value=\"$cata[$nome_campo]\" TYPE=Text SIZE='40 MAXLENGTH='80'></td></tr>"; endif;
+			if($t_cata[$nome_campo]=="f"):  $cata[$nome_campo]=stripslashes($cata[$nome_campo]); $campofoto=$nome_campo; $contenuto_testo.= "<tr><td valign=top>$nome_campo: </td><td valign=top><input NAME=\"$campofoto\" value=\"$cata[$campofoto]\" TYPE=file SIZE='20 MAXLENGTH='80'></td></tr>"; endif;
+
+			if($t_cata[$nome_campo]=="l"):  $cata[$nome_campo]=stripslashes($cata[$nome_campo]); $campofoto=$nome_campo; $contenuto_testo.= "<tr><td valign=top>$nome_campo: </td><td valign=top><input NAME=\"$campofoto\" value=\"$cata[$campofoto]\" TYPE=file SIZE='20 MAXLENGTH='80'></td></tr>"; endif;
+
+			if($t_cata[$nome_campo]=="b"):   $cata[$nome_campo]=stripslashes($cata[$nome_campo]); $contenuto_testo.= "<tr><td valign=top>$nome_campo: </td><td valign=top><TEXTAREA NAME=\"new_cata[$nome_campo]\" ROWS=5 COLS=50 WRAP=Virtual>$cata[$nome_campo]</TEXTAREA></td></tr>"; endif;
+
+			// visualizzo campo select 
+			if($t_cata[$nome_campo]=="s"):  
+				$opzioni="";
+				$lista_option=explode("::",$v_cata[$nome_campo]);
+				for ($k=0;$k<count($lista_option);$k++):
+					if(trim($lista_option[$k])!=""):
+						$opzioni=$opzioni."<option value='$lista_option[$k]'>$lista_option[$k]</option>";
+					endif;
+				endfor;
+				$contenuto_testo.= "<tr><td valign=top>$nome_campo: </td><td valign=top>";
+				$contenuto_testo.= "<select NAME=\"new_cata[$nome_campo]\">$opzioni</select><br>"; 
+				$contenuto_testo.= "</td></tr>"; 
+			endif;
+
+			// visualizzo campo select_custom
+			if($t_cata[$nome_campo]=="sc"):
+				$opzioni="";
+				$lista_option=explode("::",$v_cata[$nome_campo]);
+				//$lista_option[]=$cata[$nome_campo];
+				for ($k=0;$k<count($lista_option);$k++):
+					if(trim($lista_option[$k])!=""):
+						if (trim($lista_option[$k])==$cata[$nome_campo]):
+							$sel="selected";
+						else:
+							$sel="";
+						endif;
+						$opzioni=$opzioni."<option value=\"$lista_option[$k]\" $sel>$lista_option[$k]</option>";
+					endif;
+				endfor;				
+				$opzioni="<option value=\"$cata[$nome_campo]\" selected>$cata[$nome_campo]</option>".$opzioni;
+				$opzioni="<option value=\"\" $sel></option>".$opzioni;
+				$contenuto_testo.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top>
+							<select NAME=\"new_cata[$nome_campo]\"> $opzioni</select><input NAME=\"new_cata_custom[$nome_campo]\" value=\"\" TYPE=Text SIZE='20' MAXLENGTH='80'> 
+							<a href='$PHP_SELF?az=modifica_select&dbmusato=$dbmusato&IDoggetto=$cata[IDoggetto]&nome_campo=$nome_campo&s=$s&gs=$gs'>modifica</a> </td></tr>"; 
+			endif;
+
+			// visualizzo campo relazionato o relativo
+			if($t_cata[$nome_campo]=="re" || $t_cata[$nome_campo]=="rl"):
+				unset($parametri_relazione);
+				$parametri_relazione=explode("::",$v_cata[$nome_campo]);				
+					$dbm_relazionato=$parametri_relazione[0]; // il dbm nel quale sono i record da pescare
+					$campo_relazione=$parametri_relazione[1]; // il campo che dice quali record sono pescabili
+					$operatore_relazione=$parametri_relazione[2]; // il tipo di confronto che si fa uguale, maggiore, diverso etc
+					$parametro_relazione=$parametri_relazione[3]; // il valore da confrontare
+						if($t_cata[$nome_campo]=="rl"): $parametro_relazione=$cata[$parametro_relazione]; endif;// il parametro da confrontare
+					$mostro_relazione=$parametri_relazione[4]; // il campo del dbm relazionato da mostrare nel select 
+				$opzioni="<option value=\" \" $sel> </option>"; // il primo è vuoto
+				//trovo tutti gli IDoggetto di $dbm_relazionato che sono relazionabili
+								
+				$array_da_lavorare=file("dati/$dbm_relazionato");
+				while(list($key,$val)=each($array_da_lavorare)):
+					unset($due_pezzi);
+					$due_pezzi=explode("?^?",$val);
+					unset($cataQUI);
+					$cataQUI=unserialize($due_pezzi[1]);
+					
+					if($operatore_relazione=="uguale"):
+						if($cataQUI[$campo_relazione]=="$parametro_relazione"): 
+							// e li metto come lista_option
+							if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+						endif;
+					endif;
+					if($operatore_relazione=="contenuto"):
+						if(ermegi($cataQUI[$campo_relazione], $parametro_relazione)): 
+							// e li metto come lista_option
+							if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+						endif;
+					endif;
+					if($operatore_relazione=="maggiore"):
+						if($cataQUI[$campo_relazione]>$parametro_relazione): 
+							// e li metto come lista_option
+							if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+						endif;
+					endif;
+					if($operatore_relazione=="minore"):
+						if($cataQUI[$campo_relazione]<$parametro_relazione): 
+							// e li metto come lista_option
+							if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+						endif;
+					endif;
+					
+				endwhile;	
+				$contenuto_testo.= "
+						<tr>
+							<td valign=top><span class=testo>$nome_campo: </span></td>
+							<td valign=top><select NAME=\"new_cata[$nome_campo]\"> $opzioni</select> </td>
+						</tr>"; 
+			endif;			
+
+			// visualizzo campo checbox
+			if($t_cata[$nome_campo]=="c"):  $contenuto_testo.= "<tr><td valign=top>$nome_campo: </td><td valign=top><input type=checkbox NAME=\"new_cata[$nome_campo]\" $chk></td></tr>"; endif;
+			
+			// visualizzo campo radiobutton
+			if($t_cata[$nome_campo]=="r"):  
+				$lista_option=explode("::",$v_cata[$nome_campo]);
+				$contenuto_testo.= "<tr><td valign=top>$nome_campo: </td><td valign=top>";
+				for ($k=0;$k<count($lista_option);$k++):
+					if(trim($lista_option[$k])!=""):
+						if ($k==0):
+							$chk="checked";
+						else:
+							$chk="";
+						endif;
+						$contenuto_testo.= " $lista_option[$k] : <input type=radio NAME=\"new_cata[$nome_campo]\" value='$lista_option[$k]' $chk><br>";
+					endif;
+				endfor;				
+				$contenuto_testo.= "</td></tr>"; 
+			endif;
+			
+			// visualizzo campo con data (data che viene immessa dall'utente)
+			if($t_cata[$nome_campo]=="d"):
+													
+				// preparo input dei giorni
+				$select_giorno="<OPTION value=\"00\">giorno";
+				for($u=1; $u<32; $u++):
+					$select_giorno.= "<OPTION value=\"$u\" $selected>$u";
+				endfor;
+				$input_giorno="<SELECT NAME=\"new_cata_giorno[$nome_campo]\" SIZE=1> $select_giorno</SELECT>";
+				
+				// preparo input dei mesi
+				$array_mesi=array ("vuoto", "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"); 
+				$select_mese="<OPTION value=\"0\">mese";
+				for($u=1; $u<=12; $u++):
+					$select_mese.= "<OPTION value=\"$u\" $selected>$array_mesi[$u]";
+				endfor;
+				$input_mese="<SELECT NAME=\"new_cata_mese[$nome_campo]\" SIZE=1> $select_mese</SELECT>";
+				
+				// preparo input dell'anno
+				$input_anno="<input NAME=\"new_cata_anno[$nome_campo]\" value=\"$data_anno\" TYPE=Text SIZE='4 MAXLENGTH='4'>";
+				
+				// metto insieme i pezzettini per la visualizzazione
+				$contenuto_testo.= "
+					<tr>
+					<td valign=top><span class=testo>$nome_campo: </span></td>
+					<td valign=top>
+						$input_giorno
+						$input_mese
+						$input_anno
+					</td>
+					</tr>
+					"; 
+			endif;
+		endfor;
+
+	$contenuto_testo.= "<tr><td valign=top colspan=2>";
+	$contenuto_testo.= "<input type='hidden' name='dbmusato' value='$dbmusato'>";
+	$contenuto_testo.= "<input type='hidden' name='s' value='$s'>";
+	$contenuto_testo.= "<input type='hidden' name='gs' value='$gs'>";
+	$contenuto_testo.= "<input type='hidden' name='az' value='controlla'>";
+	$contenuto_testo.= "<input type='submit' value=' Invia'>";
+	$contenuto_testo.= "</td></tr>";
+	$contenuto_testo.= "</table>";
+	$contenuto_testo.= "</form>";
+	$contenuto_testo.= "</div>";
+	
+
+		$testata_da_usare="_cat_". $dbmusato ."_test.incl";
+		if(file_exists("$testata_da_usare")):
+			include $testata_da_usare;
+		else:
+			$contenuto_intestazione.="<span class=titolo>$dbmusato</span><br>";
+		endif;
+		
+	$contenuto_intestazione.= "<span class='titoletto'><b>Nuovo oggetto</b></span>";
+
+	//$contenuto_intestazione.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+	$contenuto_intestazione.= "<hr>";
+	$contenuto_intestazione.= "<a href=\"javascript:history.go(-1);\">torna indietro</a>";
+	//$contenuto_intestazione.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=&dbmusato=$dbmusato'>vai all'elenco</a>"; // per catalogo.php
+	//$contenuto_intestazione.= "<a href='$PHP_SELF?$link_lista'>vai all'elenco</a>"; // per ricerche.php
+	$contenuto_intestazione.= "<hr>";
+
+	$contenuto.=$contenuto_intestazione.$contenuto_testo;
+		
+	html($contenuto, $messaggio);
+endif;
+
+// GESTIONE select - immetto valori  campo array -------------------------------------
+if($az=="immetti_select"):
+
+	if($new_key!="" && $new_value!="" ): // ho un nuovo parametro
+		$new_array[trim($new_key)]=trim($new_value);
+	endif;
+	
+	// IMMISSIONE DATI
+	$dbm = dbmmopen("dati/$dbmusato","w");
+		$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+		$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+		$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+		$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+		$v_cata[$nome_campo]=implode( $new_array, "::");
+		dbmmreplace($dbm, "valori", serialize($v_cata));  
+	dbmmclose($dbm);	
+			
+	$contenuto.= "<BR>valori campo $nome_campo aggiornati<BR><hr>";
+//	$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>torna al singolo</a>";
+//	$contenuto.= " | <a href='$PHP_SELF?gs=$gs&s=$s&az=lista&dbmusato=$dbmusato'>torna alla lista</a><br>";
+	
+	$az="modifica_select";// così lo edita
+endif;
+
+// GESTIONE select - elimino parametri array -------------------------------------
+if($az=="elimina_select"):
+
+	// IMMISSIONE DATI
+	$dbm = dbmmopen("dati/$dbmusato","w");
+		$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+		$lista_valori=explode("::",$v_cata[$nome_campo]);
+
+		while ( list( $key, $val ) = each( $lista_valori ) ):
+			if ($nome_elimina!=$key):
+				$temp_para[$key]=$val;
+			endif;
+		endwhile;
+	
+		unset ($v_cata[$nome_campo]);
+	
+		if (is_array($temp_para)):
+			while ( list( $key, $val ) = each( $temp_para ) ):
+				$para[$key]=$val;
+			endwhile;
+		endif;
+			
+		$v_cata[$nome_campo]=implode( $para, "::");
+		dbmmreplace($dbm, "valori", serialize($v_cata));  
+	dbmmclose($dbm);	
+			
+	$contenuto.= "<BR>campo $nome_elimina eliminato<BR><hr>";
+
+	$az="modifica_select";// così lo edita
+endif;
+
+// GESTIONE select - edito valori campo array ----------------------------------------
+if($az=="modifica_select"):
+		
+	// PRENDO I DATI
+	$dbm = dbmmopen("dati/$dbmusato","r");
+		$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+		$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+		$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+		$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+	dbmmclose($dbm);	
+	$array=explode("::",$v_cata[$nome_campo]);
+	
+	$contenuto.= "<span class='titolo'>Modifica valori select del campo: $nome_campo</span>";
+	//$contenuto.= " | <a href='$PHP_SELF?gs=$gs&s=$s&az=lista&dbmusato=$dbmusato'>torna alla lista</a>";
+	$contenuto.= "<hr>";
+
+	$contenuto.= "<div align=right>";
+	$contenuto.="<form action='$PHP_SELF' method='post'>";
+	$contenuto.="<table border=0 cellpadding=5 cellspacing=0>";
+	
+	// quando c'é un solo valore non c'é array e allora dà errore per each, ma funziona
+	// altrimenti non saprei come fare per cominciare l'array (non so che nome dare alla prima variabile)
+	// per ora mi tengo l'errore all'inizializzazione
+	//$valori_definiti=count($array); //togliere
+	//echo "valori_definiti - $valori_definiti<br>";  //togliere
+	
+//	if(count($array)>=1): // ho almeno un valore
+	// i valori esistenti
+	if (is_array($array)):
+		while ( list( $key, $val ) = each( $array ) ):
+			$contenuto.="<tr>";
+			$contenuto.="<td valign=top  align=right><span class='testo'>$key: </span></td>";
+			$contenuto.="<td valign=top  align=left><input NAME='new_array[$key]' value='$val' TYPE=Text SIZE='40' MAXLENGTH='80'><a href='$PHP_SELF?az=elimina_select&IDoggetto=$IDoggetto&nome_elimina=$key&nome_campo=$nome_campo&dbmusato=$dbmusato&gs=$gs&s=$s'>elimina</a></td>";
+			$contenuto.="</tr>";
+		endwhile;
+	endif;
+	
+	// nuovo valore
+		$key_succ=$key+1;
+		$contenuto.="<tr>";
+		$contenuto.="<td valign=top  align=right><span class='testo'>nuovo valore: </span> 
+						<!--<input NAME='new_key' value='' TYPE=Text SIZE='10' MAXLENGTH='20'>-->
+						<input type='hidden' name='new_key' value='dfdf'></td>";
+		$contenuto.="<td valign=top  align=left><input NAME='new_value' value='' TYPE=Text SIZE='40' MAXLENGTH='80'></td>";
+		$contenuto.="</tr>";
+
+	$contenuto.="<tr>";
+	$contenuto.="<td valign=top  align=left>";
+		$contenuto.= "<input type='hidden' name='dbmusato' value='$dbmusato'>";
+		$contenuto.= "<input type='hidden' name='IDoggetto' value='$IDoggetto'>";
+		$contenuto.= "<input type='hidden' name='nome_campo' value='$nome_campo'>";
+		$contenuto.= "<input type='hidden' name='gs' value='$gs'>";
+		$contenuto.= "<input type='hidden' name='s' value='$s'>";
+		$contenuto.= "<input type='hidden' name='az' value='immetti_select'>";
+	$contenuto.= "</td>";
+	$contenuto.="<td valign=top  align=left>";
+		$contenuto.="<INPUT TYPE=Submit VALUE=' invia '>";
+	$contenuto.= "</td>";
+	$contenuto.="</tr>";
+		
+	$contenuto.="</table>";
+	$contenuto.= "</form>";
+	$contenuto.= "</div>";
+	$contenuto.="<br><br>";
+
+	html($contenuto, $messaggio);
+endif;
+
+// GESTIONE: SVUOTA RECORD -----------------------------------------------------
+if($az=="svuotarecord" && $gs!=""):
+// chiede conferma e in caso positivo elimina il file del $campofoto di $IDoggetto
+// arriva:
+//			az - eliminafile
+//			azbis - eliminafiledavvero (quando ha confermato eliminazione)
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+//			$campofoto - il campo con il file da elimlinare
+//			IDoggetto - l'oggetto che contiene la foto
+
+	if($azbis=="svuotadavvero" && $gs!=""): // ha confermato o svuotamento del record
+	
+		$contenuto.= "<span class='titolo'><b>Svuotamento record effettuato</b></span>";
+		//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+			
+		$dbm = dbmmopen("dati/$dbmusato","w");
+		
+			// PRENDO I DATI
+			$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+			$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+			$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+			$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+			$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+
+			//CANCELLO VALORI, FOTO E FILE
+			for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+		 		$nome_campo=$c_cata[$j];
+		
+				// cancella la vecchia foto
+				if($t_cata[$nome_campo]=="f"): 
+					if( file_exists($cata[$nome_campo]) ):
+						unlink($cata[$nome_campo]);           
+					endif;
+				endif;
+				
+				// cancella il vecchio file
+				if($t_cata[$nome_campo]=="l"): 
+					if( file_exists($cata[$nome_campo]) ):
+						unlink($cata[$nome_campo]);           
+					endif;
+				endif;
+				
+				// cancella il vecchio dato, tranne l'IDoggetto
+				if($nome_campo!="IDoggetto"): 
+				$cata[$nome_campo]="";		
+				endif;
+			endfor;
+
+			// salvo il file svuotato
+			dbmmreplace($dbm,$cata[IDoggetto], serialize($cata));  
+		dbmmclose($dbm);	
+	
+		$contenuto.= "<br>";
+		$contenuto.= "<br>";
+		$contenuto.= "<br>";
+		$contenuto.= "<a href='$PHP_SELF?s=$s&gs=$gs&ln=$ln'>torna alla lista</a>"; // vale per Fabbiano
+		$contenuto.= "<br>";
+		$contenuto.= "<br>";
+		$contenuto.= "<br>";
+
+		html($contenuto, $messaggio);
+		
+	else: // la prima volta chiedo conferma
+	
+		$contenuto.= "<span class='titolo'><b>Svuota record: richiesta conferma</b></span>";
+		//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+		$contenuto.= "<hr>
+				<a href=\"javascript:history.go(-1);\">torna indietro</a>&nbsp;|&nbsp;
+				<!-- <a href='$PHP_SELF?gs=$gs&s=$s&az=&dbmusato=$dbmusato'>vai all'elenco</a>&nbsp;|&nbsp; -->
+				<a href='$PHP_SELF?gs=$gs&s=$s&az=nuovo&dbmusato=$dbmusato'>nuovo oggetto</a>
+				<hr>";
+		$contenuto.= "Confermi lo svuotamento di:<br><br>";
+		$contenuto.= "<br>";
+		$contenuto.= "<br>";
+			
+		// PRENDO I DATI
+		$dbm = dbmmopen("dati/$dbmusato","r");
+			$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+			$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+			$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+			$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+			$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+		dbmmclose($dbm);	
+	
+		$contenuto.= "<div align=center>";
+		include "_catalogo_CATA_lista_pub.incl";	
+		$contenuto.= "<hr>";
+			$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&azbis=svuotadavvero&az=svuotarecord&IDoggetto=$IDoggetto&dbmusato=$dbmusato'><B>SI</B> lo svuoto</a>&nbsp;|&nbsp;";
+			$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'><B>NO</B> lo tengo</a>";
+		$contenuto.= "<hr>";
+	
+		$contenuto.= "</div>";
+			
+		html($contenuto, $messaggio);
+	endif;
+endif;
+
+// GESTIONE: METTI/CAMBIA FILE -----------------------------------------------------
+if($az=="cambiafile"):
+// prepara un form per inviare un file
+// arriva:
+//			az - cambiafile
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+//			$campofoto - il campo dove mettere il file
+//			IDoggetto - l'oggetto che contiene il file
+// esce:
+// 		az - controlla - se invia una file
+
+	$contenuto.= "<span class='titolo'><b>Immissione file</b></span>";
+	//$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+		
+	// PRENDO I DATI
+	$dbm = dbmmopen("dati/$dbmusato","r");
+		$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+		$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+		$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+		$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+		$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+	dbmmclose($dbm);	
+
+	$contenuto.= "<div align=center>";
+	$contenuto.= "<form ENCTYPE='multipart/form-data' action='$PHP_SELF' method='POST'>";
+		for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+ 			$nome_campo=$c_cata[$j];
+			$contenuto.= "<input NAME='new_cata[$nome_campo]' value='$cata[$nome_campo]' TYPE=hidden>";
+		endfor;
+		
+//		if(trim($cata[$campofoto])!=""): srand((double)microtime()*1000000); $randval = rand(); $contenuto.= "<img src='$cata[$campofoto]?$randval'><br><br>"; endif;
+		$contenuto.= "<br><input NAME='$campofoto' value='$cata[$campofoto]' TYPE=file SIZE='20 MAXLENGTH='80'>"; 
+		
+	$contenuto.= "<input type='hidden' name='dbmusato' value='$dbmusato'>";
+	$contenuto.= "<input type='hidden' name='gs' value='$gs'>";
+	$contenuto.= "<input type='hidden' name='s' value='$s'>";
+	$contenuto.= "<input type='hidden' name='az' value='controlla'>";
+	$contenuto.= "<input type='submit' value=' Invia '>";
+	$contenuto.= "</form>";
+	
+	$contenuto.= "</div>";
+	
+	html($contenuto, $messaggio);
+endif;
+
+// GESTIONE array - immetto valori  campo array -------------------------------------
+if($az=="immetti_array"):
+
+	if($new_key!=""): // ho un nuovo parametro
+		$new_array[trim($new_key)]=trim($new_value);
+	endif;
+	
+	// IMMISSIONE DATI
+	$dbm = dbmmopen("dati/$dbmusato","w");
+		$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+		$cata[$nome_campo]=serialize($new_array);
+		dbmmreplace($dbm, "$IDoggetto", serialize($cata));  
+	dbmmclose($dbm);	
+			
+	$contenuto.= "<BR>valori campo $nome_campo aggiornati<BR><hr>";
+//	$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>torna al singolo</a>";
+//	$contenuto.= " | <a href='$PHP_SELF?gs=$gs&s=$s&az=lista&dbmusato=$dbmusato'>torna alla lista</a><br>";
+	
+	$az="modifica_array";// così lo edita
+endif;
+
+// GESTIONE array - elimino parametri array -------------------------------------
+if($az=="elimina_array"):
+
+	// IMMISSIONE DATI
+	$dbm = dbmmopen("dati/$dbmusato","w");
+		$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+		$para=unserialize($cata[$nome_campo]);
+		while ( list( $key, $val ) = each( $para ) ):
+			if ($nome_elimina!=$key):
+				$temp_para[$key]=$val;
+			endif;
+		endwhile;
+		unset ($para);
+		if (is_array($temp_para)):
+			while ( list( $key, $val ) = each( $temp_para ) ):
+				$para[$key]=$val;
+			endwhile;
+		endif;
+		$cata[$nome_campo]=serialize($para);
+		dbmmreplace($dbm, "$IDoggetto", serialize($cata));  
+	dbmmclose($dbm);	
+			
+	$contenuto.= "<BR>campo $nome_elimina eliminato<BR><hr>";
+
+	$az="modifica_array";// così lo edita
+endif;
+
+// GESTIONE array - edito valori campo array ----------------------------------------
+if($az=="modifica_array"):
+		
+	// PRENDO I DATI
+	$dbm = dbmmopen("dati/$dbmusato","r");
+		$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+		$array=unserialize($cata[$nome_campo]);
+	dbmmclose($dbm);	
+		
+	$contenuto.= "<span class='titolo'>Modifica valori array</span>";
+	$contenuto.= "&nbsp;|&nbsp;<a href='' onclick=\"window.open('help.php?pg=XXX', '', 'toolbar=no,location=no,directory=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width=600,height=300' );return false;\">help</a><br>";
+	$contenuto.= "<hr>";
+	$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=modifica&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>torna al singolo</a>";
+	$contenuto.= " | <a href='$PHP_SELF?gs=$gs&s=$s&az=lista&dbmusato=$dbmusato'>torna alla lista</a>";
+	$contenuto.= "<hr>";
+
+	$contenuto.= "<div align=right>";
+	$contenuto.="<form action='$PHP_SELF' method='post'>";
+	$contenuto.="<table border=0 cellpadding=5 cellspacing=0>";
+	
+	// quando c'é un solo parametro non c'é array e allora dà errore per each, ma funziona
+	// altrimenti non saprei come fare per cominciare l'array (non so che nome dare alla prima variabile)
+	// per ora mi tengo l'errore all'inizializzazione
+	//$valori_definiti=count($array); //togliere
+	//echo "valori_definiti - $valori_definiti<br>";  //togliere
+	
+//	if(count($array)>=1): // ho almeno un parametro
+	if (is_array($array)):
+		while ( list( $key, $val ) = each( $array ) ):
+			$contenuto.="<tr>";
+			$contenuto.="<td valign=top  align=right><span class='testo'>$key: </span></td>";
+			$contenuto.="<td valign=top  align=left><input NAME='new_array[$key]' value='$val' TYPE=Text SIZE='40' MAXLENGTH='80'><a href='$PHP_SELF?az=elimina_array&IDoggetto=$IDoggetto&nome_elimina=$key&nome_campo=$nome_campo&dbmusato=$dbmusato&gs=$gs&s=$s'>elimina</a></td>";
+			$contenuto.="</tr>";
+		endwhile;
+	endif;
+	
+	// nuovo parametro
+		$contenuto.="<tr>";
+		$contenuto.="<td valign=top  align=right><span class='testo'>nuovo parametro: </span> <input NAME='new_key' value='' TYPE=Text SIZE='10' MAXLENGTH='20'></td>";
+		$contenuto.="<td valign=top  align=left><input NAME='new_value' value='' TYPE=Text SIZE='40' MAXLENGTH='80'></td>";
+		$contenuto.="</tr>";
+
+	$contenuto.="<tr>";
+	$contenuto.="<td valign=top  align=left>";
+		$contenuto.= "<input type='hidden' name='dbmusato' value='$dbmusato'>";
+		$contenuto.= "<input type='hidden' name='IDoggetto' value='$IDoggetto'>";
+		$contenuto.= "<input type='hidden' name='nome_campo' value='$nome_campo'>";
+		$contenuto.= "<input type='hidden' name='gs' value='$gs'>";
+		$contenuto.= "<input type='hidden' name='s' value='$s'>";
+		$contenuto.= "<input type='hidden' name='az' value='immetti_array'>";
+	$contenuto.= "</td>";
+	$contenuto.="<td valign=top  align=left>";
+		$contenuto.="<INPUT TYPE=Submit VALUE=' invia '>";
+	$contenuto.= "</td>";
+	$contenuto.="</tr>";
+		
+	$contenuto.="</table>";
+	$contenuto.= "</form>";
+	$contenuto.= "</div>";
+	$contenuto.="<br><br>";
+
+	html($contenuto, $messaggio);
+endif;
+
+
+// GESTIONE: MODIFICA DATI SINGOLO IDOGGETTO -----------------------------------------------------	
+if($az=="modifica"):
+// ultima perchè le altre la richiamano
+// edita form per modificare un oggetto
+// arriva:
+//			az - modifica
+//			gs - non vuoto
+//			dbmusato - il nome del dbm utilizzato
+//			IDoggetto - l'oggetot da editare
+// esce:
+// 		az - controlla - quando invia i dati per immissione
+
+
+	$testata_da_usare="_cat_". $dbmusato ."_test.incl";
+	if(file_exists("$testata_da_usare")):
+		include $testata_da_usare;
+	else:
+		$contenuto.="<span class=titolo>$dbmusato</span><br>";
+	endif;
+
+	$singolo_da_usare="_cat_". $dbmusato ."_singolo.incl";	
+	if(file_exists("$singolo_da_usare")):
+		// in condizioni normail uso il record specifico per visualizzare i dati della tabella
+		include $singolo_da_usare; 
+	else:
+		// mostro il singolo in condizioni di emergenza, senza il file specifico per questa tabella
+		$contenuto.= "<span class='titoletto'><b>Modifica dati singolo oggetto</b></span>";
+		$contenuto.= "<hr>";
+		$contenuto_intestazione.= "<a href=\"javascript:history.go(-1);\">torna indietro</a>";
+		$contenuto.= "<a href='$PHP_SELF?gs=$gs&s=$s&az=nuovo&dbmusato=$dbmusato'>nuovo oggetto</a>";
+		$contenuto.= "<hr>";
+			
+		// PRENDO I DATI
+		$dbm = dbmmopen("dati/$dbmusato","r");
+			$cata=unserialize(dbmmfetch($dbm,"$IDoggetto"));
+			$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+			$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+			$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+			$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+		dbmmclose($dbm);	
+	
+		$contenuto.= "<div align=right>";
+		$contenuto.= "<form ENCTYPE='multipart/form-data' action='$PHP_SELF' method='POST'>";
+		$contenuto.= "<table border='0'>";
+			
+			for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+	 			$nome_campo=$c_cata[$j];
+	
+				// visualizzo IDoggetto
+				// visualizzo DATA_modifica
+				// visualizzo e salvo DATA_creazione
+				$data_creazione=date(" d-m-Y H:i",$cata[DATA_creazione]);
+				$data_modifica=date(" d-m-Y H:i",$cata[DATA_modifica]);
+				$data_attuale=time();
+				if($nome_campo=="IDoggetto"):  
+					$contenuto.= "
+						<tr><td valign=top align=right colspan=2>
+						<span class=testo>IDoggetto: $cata[$nome_campo] <input NAME=\"new_cata[$nome_campo]\" value=\"$cata[$nome_campo]\" TYPE='hidden'><br>
+						<font size=1 color=999999>creato il: $data_creazione</font><br>
+						<font size=1 color=999999>ultima modifica: $data_modifica</font> <input NAME=\"new_cata[DATA_modifica]\" value=\"$data_attuale\" TYPE='hidden'><br>
+						<font size=1 color=999999>Ultimo utente: $cata[$nome_campo]</font><input NAME=\"new_cata[ultimo_utente]\" value='$gs' TYPE='hidden'>
+						</span>
+						</td></tr>";
+				endif;
+	
+				// visualizzo campo di testo
+				if($t_cata[$nome_campo]=="t" && $nome_campo!="IDoggetto"):  
+	
+					$cata[$nome_campo]=stripslashes($cata[$nome_campo]); 
+					$cata[$nome_campo]=ermeg_replace("\"", "''", $cata[$nome_campo]); 
+					$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><input NAME=\"new_cata[$nome_campo]\" value=\"$cata[$nome_campo]\" TYPE=Text SIZE='40 MAXLENGTH='80'></td></tr>"; 
+				endif;
+	
+				// visualizzo campo relazionato o relativo
+				if($t_cata[$nome_campo]=="re" || $t_cata[$nome_campo]=="rl"):
+					unset($parametri_relazione);
+					$parametri_relazione=explode("::",$v_cata[$nome_campo]);
+						$dbm_relazionato=$parametri_relazione[0]; // il dbm nel quale sono i record da pescare
+						$campo_relazione=$parametri_relazione[1]; // il campo che dice quali record sono pescabili
+						$operatore_relazione=$parametri_relazione[2]; // il tipo di confronto che si fa uguale, maggiore, diverso etc
+						$parametro_relazione=$parametri_relazione[3]; // il parametro da confrontare
+							if($t_cata[$nome_campo]=="rl"): $parametro_relazione=$cata[$parametro_relazione]; endif;// il parametro da confrontare
+						$mostro_relazione=$parametri_relazione[4]; // il campo del dbm relazionato da mostrare nel select 
+					$opzioni="<option value=\" \" $sel> </option>"; // il primo è vuoto
+					//trovo tutti gli IDoggetto di $dbm_relazionato che sono relazionabili
+					$array_da_lavorare=file("dati/$dbm_relazionato");
+					while(list($key,$val)=each($array_da_lavorare)):
+						unset($due_pezzi);
+						$due_pezzi=explode("?^?",$val);
+						unset($cataQUI);
+						$cataQUI=unserialize($due_pezzi[1]);
+						
+						if($operatore_relazione=="uguale"):
+							if($cataQUI[$campo_relazione]=="$parametro_relazione"): 
+								// e li metto come lista_option
+								if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+									$sel="selected";
+								else:
+									$sel="";
+								endif;
+								$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+							endif;
+						endif;
+						if($operatore_relazione=="contenuto"):
+							if(ermegi($cataQUI[$campo_relazione], $parametro_relazione)): 
+								// e li metto come lista_option
+								if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+									$sel="selected";
+								else:
+									$sel="";
+								endif;
+								$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+							endif;
+						endif;
+						if($operatore_relazione=="maggiore"):
+							if($cataQUI[$campo_relazione]>$parametro_relazione): 
+								// e li metto come lista_option
+								if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+									$sel="selected";
+								else:
+									$sel="";
+								endif;
+								$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+							endif;
+						endif;
+						if($operatore_relazione=="minore"):
+							if($cataQUI[$campo_relazione]<$parametro_relazione): 
+								// e li metto come lista_option
+								if ($cataQUI[IDoggetto]==$cata[$nome_campo]):
+									$sel="selected";
+								else:
+									$sel="";
+								endif;
+								$opzioni=$opzioni."<option value=\"$cataQUI[IDoggetto]\" $sel>$cataQUI[$mostro_relazione]</option>";
+							endif;
+						endif;
+						
+					endwhile;	
+					$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><select NAME=\"new_cata[$nome_campo]\"> $opzioni</select> 
+							</td></tr>"; 
+				endif;
+	
+				// visualizzo campo select
+				if($t_cata[$nome_campo]=="s"):
+					$opzioni="";
+					$lista_option=explode("::",$v_cata[$nome_campo]);
+					//$lista_option[]=$cata[$nome_campo];
+					for ($k=0;$k<count($lista_option);$k++):
+						if(trim($lista_option[$k])!=""):
+							if (trim($lista_option[$k])==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$lista_option[$k]\" $sel>$lista_option[$k]</option>";
+						endif;
+					endfor;				
+					$opzioni="<option value=\"$cata[$nome_campo]\" selected>$cata[$nome_campo]</option>".$opzioni;
+					$opzioni="<option value=\"\" $sel></option>".$opzioni;
+					$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><select NAME=\"new_cata[$nome_campo]\"> $opzioni</select><input NAME=\"new_cata_custom[$nome_campo]\" value=\"\" TYPE=Text SIZE='20' MAXLENGTH='80'> 
+							</td></tr>"; 
+				endif;
+	
+				// visualizzo campo select_custom
+				if($t_cata[$nome_campo]=="sc"):
+					$opzioni="";
+					$lista_option=explode("::",$v_cata[$nome_campo]);
+					//$lista_option[]=$cata[$nome_campo];
+					for ($k=0;$k<count($lista_option);$k++):
+						if(trim($lista_option[$k])!=""):
+							if (trim($lista_option[$k])==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni=$opzioni."<option value=\"$lista_option[$k]\" $sel>$lista_option[$k]</option>";
+						endif;
+					endfor;				
+					$opzioni="<option value=\"$cata[$nome_campo]\" selected>$cata[$nome_campo]</option>".$opzioni;
+					$opzioni="<option value=\"\" $sel></option>".$opzioni;
+					$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><select NAME=\"new_cata[$nome_campo]\"> $opzioni</select><input NAME=\"new_cata_custom[$nome_campo]\" value=\"\" TYPE=Text SIZE='20' MAXLENGTH='80'> 
+								<a href='$PHP_SELF?az=modifica_select&dbmusato=$dbmusato&IDoggetto=$cata[IDoggetto]&nome_campo=$nome_campo&s=$s&gs=$gs'>modifica</a> </td></tr>"; 
+				endif;
+	
+				// visualizzo campo checkbox
+				if($t_cata[$nome_campo]=="c"):  
+					if (trim($cata[$nome_campo])=="on"):
+						$chk="checked";
+					else:
+						$chk="";
+					endif;
+					$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><input type=checkbox NAME=\"new_cata[$nome_campo]\" $chk></td></tr>"; 
+				endif;
+	
+				// visualizzo campo radiobutton
+				if($t_cata[$nome_campo]=="r"):  
+					$lista_option=explode("::",$v_cata[$nome_campo]);
+					$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top>";
+					for ($k=0;$k<count($lista_option);$k++):
+						if(trim($lista_option[$k])!=""):
+							if (trim($lista_option[$k])== $cata[$nome_campo]):
+								$chk="checked";
+							else:
+								$chk="";
+							endif;
+							$contenuto.= " $lista_option[$k] : <input type=radio NAME=\"new_cata[$nome_campo]\" value=\"$lista_option[$k]\" $chk><br>";
+						endif;
+					endfor;				
+					$contenuto.= "</td></tr>"; 
+				endif;
+	
+				// visualizzo campo di box testo
+				if($t_cata[$nome_campo]=="b" && $nome_campo!="IDoggetto"):   $cata[$nome_campo]=stripslashes($cata[$nome_campo]); $contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><TEXTAREA NAME=\"new_cata[$nome_campo]\" ROWS=5 COLS=50 WRAP=Virtual>$cata[$nome_campo]</TEXTAREA></td></tr>"; endif;
+				
+				// visualizzo campo con foto
+				if($t_cata[$nome_campo]=="f"):
+					$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><input NAME=\"new_cata[$nome_campo]\" value=\"$cata[$nome_campo]\" TYPE=hidden>"; 
+					if($cata[$nome_campo]!=""):
+						// calcolo la foto piccola	
+						settype($cata[$nome_campo], "string");
+						$urlfoto="$cata[$nome_campo]";
+						if(file_exists($urlfoto) && trim($urlfoto)!=""):
+							$imagesize = GetImageSize("$urlfoto");
+							$maxwidth=120;
+							$maxheight=120;
+							$percentuale=100;
+							if($imagesize[0]>$maxwidth): $percentuale=round(($maxwidth / $imagesize[0]) * 100); endif;
+							if($imagesize[1]>$maxheight): $percentuale=round(($maxheight / $imagesize[1]) * 100); endif;
+							$pixelgiustiwidth=round(($percentuale * $imagesize[0]) / 100);
+							$pixelgiustiheight=round(($percentuale * $imagesize[1]) / 100);
+							srand((double)microtime()*1000000); $randval = rand();
+							$contenuto.= "<img SRC='$urlfoto?' width='$pixelgiustiwidth' height='$pixelgiustiheight' HSPACE='10' VSPACE='3' BORDER='0'><br>";
+						endif;
+						$contenuto.= "<a href='$PHP_SELF?az=cambiafoto&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>cambia foto</a>&nbsp;|&nbsp;";
+						$contenuto.= "<a href='$PHP_SELF?az=eliminafoto&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>elimina foto</a><br></td></tr>";
+					else:
+						$contenuto.= "<a href='$PHP_SELF?az=cambiafoto&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>inserisci foto</a></td></tr> ";				
+					endif;
+				endif;
+	
+				// visualizzo campo con file
+				if($t_cata[$nome_campo]=="l"):
+					$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><input NAME='new_cata[$nome_campo]' value='$cata[$nome_campo]' TYPE=hidden>"; 
+					if($cata[$nome_campo]!=""):
+						$contenuto.= "<a href='$PHP_SELF?az=cambiafile&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>cambia file</a>&nbsp;|&nbsp;";
+						$contenuto.= "<a href='$PHP_SELF?az=eliminafile&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>elimina file</a><br></td></tr>";
+					else:
+						$contenuto.= "<a href='$PHP_SELF?az=cambiafile&s=$s&gs=$gs&campofoto=$nome_campo&IDoggetto=$cata[IDoggetto]&dbmusato=$dbmusato'>inserisci file</a></td></tr> ";				
+					endif;
+				endif;
+	
+				// visualizzo campo array | e lo mantengo col campo hidden 
+				if($t_cata[$nome_campo]=="a"): 
+					$contenuto.= "<tr><td valign=top><span class=testo>$nome_campo: </span></td><td valign=top><a href='$PHP_SELF?az=modifica_array&dbmusato=$dbmusato&IDoggetto=$cata[IDoggetto]&nome_campo=$nome_campo&s=$s&gs=$gs'>modifica</a><input NAME='duplica' value='$nome_campo' TYPE='hidden'><input NAME='duplica_id' value='$IDoggetto' TYPE='hidden'></td></tr>"; 
+				endif;
+				
+				// visualizzo campo con data (data che viene immessa dall'utente)
+				// è registrato un timestamp
+				if($t_cata[$nome_campo]=="d"):
+
+					// rendo leggibile il timestamp
+					$data_giorno=date("d", $cata[$nome_campo]); // formato "03" = terzo giorno del mese
+					$data_mese=date("m", $cata[$nome_campo]); // formato "05" = maggio
+					$data_anno=date("y", $cata[$nome_campo]); // formato "04"
+													
+					// preparo input dei giorni
+					$select_giorno="<OPTION value=\"00\">giorno";
+					for($u=1; $u<32; $u++):
+						$selected=""; $n=$u; if($n=="$data_giorno"): $selected="SELECTED"; endif;
+						$select_giorno.= "<OPTION value=\"$u\" $selected>$u";
+					endfor;
+					$input_giorno="<SELECT NAME=\"new_cata_giorno[$nome_campo]\" SIZE=1> $select_giorno</SELECT>";
+					
+					// preparo input dei mesi
+					$array_mesi=array ("vuoto", "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"); 
+					$select_mese="<OPTION value=\"0\">mese";
+					for($u=1; $u<=12; $u++):
+						$selected=""; $n=$u; if($n==$data_mese): $selected="SELECTED"; 	endif;
+						$select_mese.= "<OPTION value=\"$u\" $selected>$array_mesi[$u]";
+					endfor;
+					$input_mese="<SELECT NAME=\"new_cata_mese[$nome_campo]\" SIZE=1> $select_mese</SELECT>";
+					
+					// preparo input dell'anno
+					$input_anno="<input NAME=\"new_cata_anno[$nome_campo]\" value=\"$data_anno\" TYPE=Text SIZE='4 MAXLENGTH='4'>";
+					
+					// metto insieme i pezzettini per la visualizzazione
+					$contenuto.= "
+						<tr>
+						<td valign=top><span class=testo>$nome_campo: </span></td>
+						<td valign=top>
+							$input_giorno
+							$input_mese
+							$input_anno
+						</td>
+						</tr>
+						"; 
+				endif;
+	
+			endfor;
+		
+		$contenuto.= "<tr><td valign=top colspan=2>";
+		$contenuto.= "<input type='hidden' name='dbmusato' value='$dbmusato'>";
+		$contenuto.= "<input type='hidden' name='gs' value='$gs'>";
+		$contenuto.= "<input type='hidden' name='s' value='$s'>";
+		$contenuto.= "<input type='hidden' name='az' value='controlla'>";
+		$contenuto.= "<input type='submit' value=' Invia '>";
+		$contenuto.= "</td></tr>";
+		$contenuto.= "</table>";
+		$contenuto.= "</form>";
+		$contenuto.= "</div>";
+	endif;
+
+	html($contenuto, $messaggio);
+endif;
+
+?>

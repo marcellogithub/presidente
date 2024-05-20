@@ -1,0 +1,1 @@
+	effettuate modifiche in modo che funzioni con php attuale		modificati spazi e stile in modo che non sia troppo piccolo		login: admin	psw: 6347	

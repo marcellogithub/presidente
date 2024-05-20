@@ -1,0 +1,48 @@
+<?php  
+	// RISULTATI:  NAVIGAZIONE ------------------------------------------
+	// visualizza il risultato e permette di navigarci dentro
+	// arriva - $j: numero totale annunci trovati 
+	// arriva - $oggettitrovatitotale : numero totale annunci trovati
+	// arriva - $gia: numero annunci giˆ visti
+	// arriva - $quanti: quanti annunci vedere volta per volta
+	// arriva - $precedenti : link ai precedenti
+	// arriva - $inmezzo : la barretta in mezzo
+	// arriva - $prossimi : link ai prossimi
+	// arriva - $visti : quanti annunci visti in questo giro
+	// esce - visualizzazione presentazione e navigazione tra i risultati
+			
+	// caso nessun risultato
+	if($oggettitrovatitotale==0):
+		$testata_da_usare="_cat_". $dbmusato ."_test.incl";
+		if(file_exists("$testata_da_usare")):
+			include $testata_da_usare;
+		else:
+			$contenuto.="<span class=titolo>$dbmusato</span><br>";
+		endif;
+
+		$contenuto.= "Non abbiamo trovato alcun record; riprova con altre parole o con categorie piu' ampie";
+		if($gs!=""):
+			$contenuto.="<br><a href='$PHP_SELF?gs=$gs&s=$s&az=nuovo&dbmusato=$dbmusato'>nuovo oggetto</a><br>";
+			html($contenuto, $messaggio);
+		endif;
+		
+		$imp_da_usare="_cat_". $dbmusato ."_imp.incl";
+		if(file_exists("$imp_da_usare")):
+			include $imp_da_usare;
+		else:
+			include "_ric_imp.incl";
+		endif;
+
+		html($contenuto, $messaggio);
+	endif;
+	
+	/*
+	//caso normale
+	$contenuto.= "<table width=100% border=0><tr>";
+	//$contenuto.= "<td align=left><span class='testo'>trovati $oggettitrovatitotale titoli</span></td>";
+	$contenuto.= "<td>&nbsp;</td>";
+	$contenuto.= "</tr><tr>";
+	$contenuto.= "<td><span class='testo'>visualizzati titoli da ".($gia+1)." a $visti.</span></td>"; 
+	$contenuto.= "<td align=right><span class='testo'>$precedenti $inmezzo $prossimi</span></td>";
+	$contenuto.= "</tr></table>";
+	*/

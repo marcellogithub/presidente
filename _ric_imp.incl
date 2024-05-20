@@ -1,0 +1,253 @@
+<?php  
+
+	//se arriva qua non ci sono le impostazioni specifiche per quella tabella
+	// ne uso una generica
+	
+	// ricerche per campo  ----------------------------------------
+	$contenuto.= "<div align=center>";
+	$contenuto.= "<form ENCTYPE=\"multipart/form-data\" action=\"$PHP_SELF\" method=\"POST\">";	
+	$contenuto.= "<table width=100% cellspacing=0 cellpadding=5 bgcolor=\"#bbbbbb\">";
+	$contenuto.= "<tr>";
+	$contenuto.= "<td align=left bgcolor=\"#999999\" colspan=2>
+				<span class=titolo>Ricerca per campi su $dbmusato<br></span>
+				</td>
+				</tr>";
+	$contenuto.= "<tr>";
+	$contenuto.= "<td align=left bgcolor=\"#aaaaaa\" colspan=2>
+				<span class=\"testo\">Per trovare un oggetto del catalogo scrivi il titolo o il codice o una parola chiave nei campi qui sotto.<br>
+					Basta che sia presente almeno un elemento da cercare.</span>
+				</td>";
+	$contenuto.= "</tr>";
+		
+	// PRENDO I DATI
+	$dbm = dbmmopen("dati/$dbmusato","r");
+		$c_cata=unserialize(dbmmfetch($dbm,"campi"));
+		$t_cata=unserialize(dbmmfetch($dbm,"tipi"));
+		$n_cata=unserialize(dbmmfetch($dbm,"nomi"));
+		$v_cata=unserialize(dbmmfetch($dbm,"valori"));
+	dbmmclose($dbm);	
+
+	$opzioni.="<option value=\"contenuto\">contenuto</option>";
+	$opzioni.="<option value=\"uguale\">uguale</option>";
+	$opzioni.="<option value=\"maggiore\">maggiore</option>";
+	$opzioni.="<option value=\"minore\">minore</option>";							
+	
+	for ($j = 0; $j <= $c_cata[numero_campi]; $j++):
+ 		$nome_campo=$c_cata[$j];
+		$j=sprintf("%02d", $j);
+
+		// visualizzo campo di testo
+		// NON visualizzo ultimo utente ut || $t_cata[$nome_campo]=="ut" 
+		// visualizzo box
+		if(	$t_cata[$nome_campo]=="t" ||
+			$t_cata[$nome_campo]=="b" 
+			):  
+			$contenuto.= "<tr>";
+			$contenuto.= "<td align=right><span class=testo>$nome_campo </span></td>";
+			$operatore_qui="operatore".$j;
+			$stringa_qui="stringa".$j;
+			$camporicerca_qui="camporicerca".$j;
+			$contenuto.= "
+				<td>
+				<select NAME=\"$operatore_qui\"> $opzioni</select>
+				<input NAME=\"$stringa_qui\" value=\"\" TYPE=Text SIZE=\"30\" MAXLENGTH=\"80\"> 
+				<input type=\"hidden\" name=\"$camporicerca_qui\" value=\"$nome_campo\">
+				</td>
+				";
+			$contenuto.= "</tr>";
+		endif;
+		
+		// visualizzo select s
+		// visualizzo select customizzabile sc
+		if(	$t_cata[$nome_campo]=="s" ||
+			$t_cata[$nome_campo]=="sc"
+			):  
+			$contenuto.= "<tr>";
+			$contenuto.= "<td align=right><span class=testo>$nome_campo </span></td>";
+			$operatore_qui="operatore".$j;
+			$stringa_qui="stringa".$j;
+			$camporicerca_qui="camporicerca".$j;
+
+					$opzioni_select="";
+					$lista_option=explode("::",$v_cata[$nome_campo]);
+					//$lista_option[]=$cata[$nome_campo];
+					for ($k=0;$k<count($lista_option);$k++):
+						if(trim($lista_option[$k])!=""):
+							if (trim($lista_option[$k])==$cata[$nome_campo]):
+								$sel="selected";
+							else:
+								$sel="";
+							endif;
+							$opzioni_select=$opzioni_select."<option value=\"$lista_option[$k]\" $sel>$lista_option[$k]</option>";
+						endif;
+					endfor;				
+					$opzioni_select="<option value=\"$cata[$nome_campo]\" selected>$cata[$nome_campo]</option>".$opzioni_select;
+					$opzioni_select="<option value=\"\" $sel></option>".$opzioni_select;
+					$select_completo="<select NAME=\"$stringa_qui\"> $opzioni_select</select>";
+
+			$contenuto.= "
+				<td>
+				<select NAME=\"$operatore_qui\"> <option value=\"uguale\">uguale</option> $opzioni</select>
+				$select_completo
+				<input type=\"hidden\" name=\"$camporicerca_qui\" value=\"$nome_campo\">
+				</td>
+				";
+			$contenuto.= "</tr>";
+		endif;
+
+		// visualizzo radiobutton r
+		if(	$t_cata[$nome_campo]=="r"
+			):  
+			$contenuto.= "<tr>";
+			$contenuto.= "<td align=right><span class=testo>$nome_campo </span></td>";
+			$operatore_qui="operatore".$j;
+			$stringa_qui="stringa".$j;
+			$camporicerca_qui="camporicerca".$j;
+
+					$opzioni_radiobutton="";
+					for ($k=0;$k<count($lista_option);$k++):
+						if(trim($lista_option[$k])!=""):
+							if (trim($lista_option[$k])== $cata[$nome_campo]):
+								$chk="checked";
+							else:
+								$chk="";
+							endif;
+							$opzioni_radiobutton.= " $lista_option[$k] : <input type=radio NAME=\"$stringa_qui\" value=\"$lista_option[$k]\" $chk><br>";
+						endif;
+					endfor;				
+
+			$contenuto.= "
+				<td>
+				<select NAME=\"$operatore_qui\"> $opzioni</select>
+				$opzioni_radiobutton
+				<input type=\"hidden\" name=\"$camporicerca_qui\" value=\"$nome_campo\">
+				</td>
+				";
+			$contenuto.= "</tr>";
+		endif;
+		
+		// visualizzo checkbox c
+		if(	$t_cata[$nome_campo]=="c"
+			):  
+			$contenuto.= "<tr>";
+			$contenuto.= "<td align=right><span class=testo>$nome_campo </span></td>";
+			$operatore_qui="operatore".$j;
+			$stringa_qui="stringa".$j;
+			$camporicerca_qui="camporicerca".$j;
+			$contenuto.= "
+				<td>
+				<select NAME=\"$operatore_qui\"> <option value=\"uguale\">uguale</option> $opzioni</select> 
+				<input type=checkbox NAME=\"$stringa_qui\" >
+				<input type=\"hidden\" name=\"$camporicerca_qui\" value=\"$nome_campo\">
+				</td>
+				";
+			$contenuto.= "</tr>";
+		endif;
+		
+		// visualizzo data d
+		// NON visualizzo data D  || $t_cata[$nome_campo]=="D" 
+		// NON visualizzo data Dc || $t_cata[$nome_campo]=="Dc"
+		if(	$t_cata[$nome_campo]=="d" 
+			): 
+			$contenuto.= "<tr>";
+			$contenuto.= "<td align=right><span class=testo>$nome_campo </span></td>";
+			$operatore_qui="operatore".$j;
+			$stringa_qui="stringa".$j;
+			$camporicerca_qui="camporicerca".$j;
+		 
+					// preparo input dei giorni
+					$select_giorno="<OPTION value=\"00\">giorno";
+					for($u=1; $u<32; $u++):
+						$selected=""; $n=$u; if($n=="$data_giorno"): $selected="SELECTED"; endif;
+						$select_giorno.= "<OPTION value=\"$u\" $selected>$u";
+					endfor;
+					$input_giorno="<SELECT NAME=\"stringa_giorno[$nome_campo]\" SIZE=1> $select_giorno</SELECT>";
+					
+					// preparo input dei mesi
+					$array_mesi=array ("vuoto", "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"); 
+					$select_mese="<OPTION value=\"0\">mese";
+					for($u=1; $u<=12; $u++):
+						$selected=""; $n=$u; if($n==$data_mese): $selected="SELECTED"; 	endif;
+						$select_mese.= "<OPTION value=\"$u\" $selected>$array_mesi[$u]";
+					endfor;
+					$input_mese="<SELECT NAME=\"stringa_mese[$nome_campo]\" SIZE=1> $select_mese</SELECT>";
+					
+					// preparo input dell'anno
+					$input_anno="<input NAME=\"stringa_anno[$nome_campo]\" value=\"$data_anno\" TYPE=Text SIZE='4 MAXLENGTH='4'>";
+
+			$contenuto.= "
+				<td>
+				<select NAME=\"$operatore_qui\"> $opzioni</select> 
+				<input type=\"hidden\" name=\"$stringa_qui\" value=\"data\">
+				<input type=\"hidden\" name=\"$camporicerca_qui\" value=\"$nome_campo\">
+					$input_giorno
+					$input_mese
+					$input_anno
+				</td>
+				";
+			$contenuto.= "</tr>";
+		endif;
+
+		// visualizzo relazionato re
+		// visualizzo relativo rl
+
+		// visualizzo foto i
+		// visualizzo file l
+		
+	endfor;
+	
+	$contenuto.= "<tr>";
+	$contenuto.= "<td colspan=2 align=right bgcolor=\"#999999\">";			
+		$contenuto.= "<input type=\"hidden\" name=\"criterioricerca\" value=\"AND\">";
+		$contenuto.= "<input type=\"hidden\" name=\"az\" value=\"rispondi\">";
+		$contenuto.= "<input type=\"hidden\" name=\"tiporicerca\" value=\"campi\">";
+		$contenuto.= "<input type=\"hidden\" name=\"dbmusato\" value=\"$dbmusato\">";
+		$contenuto.= "<input type=\"hidden\" name=\"gs\" value=\"$gs\">";
+		$contenuto.= "<input type=\"hidden\" name=\"s\" value=\"$s\">";
+		$contenuto.= "<input type=\"hidden\" name=\"quanti\" value=\"20\">";
+		$contenuto.= "<input type=\"submit\" value=\" trova\">";			
+	$contenuto.= "</td>";
+	$contenuto.= "</tr>";
+		
+	$contenuto.= "</table>";
+	$contenuto.= "</div>";
+	$contenuto.= "</form>";	
+
+	$contenuto.= "<br>";	
+	$contenuto.= "<br>";	
+
+	// ricerche libere  ----------------------------------------
+	$contenuto.= "<div align=center>";
+	$contenuto.= "<table width=100% cellspacing=0 cellpadding=5>";
+	$contenuto.= "<tr>";
+		$contenuto.= "<td align=left bgcolor=\"#999999\">";		
+			$contenuto.= "<span class=\"titolo\"\"> <b>Ricerca per parole chiave per $dbmusato</b><br></font>";
+		$contenuto.= "</td>";
+	$contenuto.= "</tr>";
+	$contenuto.= "<tr>";
+		$contenuto.= "<td align=left bgcolor=\"#aaaaaa\">";		
+			$contenuto.= "<span class=\"testo\"> Scrivi le parole piu' importanti e premi <i>invia</i>: otterrai la lista dei record che contengono quelle parole.<br></span>";
+		$contenuto.= "</td>";
+	$contenuto.= "</tr>";
+	$contenuto.= "<tr>";
+		$contenuto.= "<td align=right bgcolor=\"#bbbbbb\">";		
+			$contenuto.= "<form ENCTYPE=\"multipart/form-data\" action=\"$PHP_SELF\" method=\"POST\">";	
+			$contenuto.= "<span class=\"testo\">parole di ricerca: </span>";
+			$contenuto.= "<input NAME=\"stringa\" value=\"\" TYPE=Text SIZE=\"40\" MAXLENGTH=\"80\"><br>";
+		$contenuto.= "</td>";
+	$contenuto.= "</tr>";
+	$contenuto.= "<tr>";
+		$contenuto.= "<td align=right bgcolor=\"#999999\">";		
+			$contenuto.= "<input type=\"hidden\" name=\"dbmusato\" value=\"$dbmusato\">";
+			$contenuto.= "<input type=\"hidden\" name=\"az\" value=\"rispondi\">";
+			$contenuto.= "<input type=\"hidden\" name=\"tiporicerca\" value=\"libera\">";
+			$contenuto.= "<input type=\"hidden\" name=\"s\" value=\"$s\">";
+			$contenuto.= "<input type=\"hidden\" name=\"gs\" value=\"$gs\">";
+			$contenuto.= "<input type=\"submit\" value=\" trova\">";
+			$contenuto.= "</form>";
+		$contenuto.= "</td>";
+	$contenuto.= "</tr>";
+	$contenuto.= "</table>";
+	$contenuto.= "</div>";
+
+?>

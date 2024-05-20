@@ -1,0 +1,23 @@
+<?php  
+//VISUALIZZAZIONE della TESTATA della lista oggetti (modulo per un oggetto) - pubblica
+
+	$dbm = dbmmopen("dati/UTEN","r");
+		$cata_utente=unserialize(dbmmfetch($dbm,$sess[IDutente]));
+	dbmmclose($dbm);								
+
+	$contenuto.= "<!-- testata lista -->";
+	
+	$contenuto.= "<div align=left>";
+	$contenuto.= "<table>";
+	$contenuto.= "<tr><td align=left>";
+	
+	$contenuto.= "<span class=titolo>Partite di $cata_utente[nome]</span>"; 
+	if($gs!=""):
+		$contenuto.= "&nbsp;&nbsp;<a href='$PHP_SELF?gs=$gs&s=$s&az=nuovo&dbmusato=$dbmusato&cata[IDutente]=$sess[IDutente]'><font size=1>nuova partita</font></a>";
+	endif;
+	
+	$contenuto.= "</td></tr>";
+
+	$contenuto.= "</table>";
+	$contenuto.= "</div>";
+?>

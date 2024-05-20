@@ -1,0 +1,140 @@
+<?php  
+
+function dbmmopen($dbm, $permessi)
+{
+	if ($permessi=="n"):
+		fopen("$dbm","a+");
+	endif;
+	return($dbm);
+}
+	
+function dbmmclose($dbm)
+{
+}
+ 
+function dbmmfetch($dbm, $chiave)
+{
+	unset($arraydbm);	
+	unset($array_da_lavorare);	
+	$array_da_lavorare=file($dbm);
+	while(list($key,$val)=each($array_da_lavorare)):
+		unset($temp);
+		$seconda=explode("?^?",$val);
+		$temp=unserialize($seconda[1]);
+		$IDoggetto_temp=$seconda[0];
+		$arraydbm[$IDoggetto_temp]=$seconda[1];
+	endwhile;
+	$valore=$arraydbm[$chiave];
+	$valore=str_replace("<invio>",chr(10),$valore);
+	return($valore);
+}
+
+function dbmmreplace($dbm, $chiave, $valore)
+{
+	$valore=str_replace(chr(10),"<invio>",$valore);
+	unset($arraydbm);	
+	unset($array_da_lavorare);	
+	$array_da_lavorare=file($dbm);
+	while(list($key,$val)=each($array_da_lavorare)):
+		unset($temp);
+		$seconda=explode("?^?",$val);
+		$temp=unserialize($seconda[1]);
+		$IDoggetto_temp=$seconda[0];
+		$arraydbm[$IDoggetto_temp]=$array_da_lavorare[$key];
+	endwhile;
+
+	$arraydbm[$chiave]=$chiave."?^?".$valore.chr(13).chr(10);
+	while(list($key,$val)=each($arraydbm)):
+		$righe.=$arraydbm[$key];
+	endwhile;
+
+	$fp=fopen($dbm,"w");
+		fwrite($fp,$righe);
+	fclose($fp);
+}
+
+function dbmminsert($dbm, $chiave, $valore)
+{
+	$valore=str_replace(chr(10),"<invio>",$valore);
+	unset($arraydbm);	
+	unset($array_da_lavorare);	
+	$array_da_lavorare=file($dbm);
+	while(list($key,$val)=each($array_da_lavorare)):
+		unset($temp);
+		$seconda=explode("?^?",$val);
+		$temp=unserialize($seconda[1]);
+		$IDoggetto_temp=$seconda[0];
+		$arraydbm[$IDoggetto_temp]=$seconda[1];
+	endwhile;
+	$valore=$arraydbm[$chiave];
+	if ($valore==""):
+		$fp=fopen($dbm,"a+");
+		fwrite($fp,$chiave."?^?".$valore.chr(13).chr(10));
+		fclose($fp);
+	endif;
+}
+
+function dbmmdelete($dbm, $chiave)
+{
+	unset($arraydbm);	
+	unset($array_da_lavorare);	
+	$array_da_lavorare=file($dbm);
+	while(list($key,$val)=each($array_da_lavorare)):
+		unset($temp);
+		$seconda=explode("?^?",$val);
+		$temp=unserialize($seconda[1]);
+		$IDoggetto_temp=$seconda[0];
+		$arraydbm[$IDoggetto_temp]=$array_da_lavorare[$key];
+	endwhile;
+
+	$arraydbm[$chiave]="";
+
+	while(list($key,$val)=each($arraydbm)):
+		$righe.=$arraydbm[$key];
+	endwhile;
+
+	$fp=fopen($dbm,"w");
+		fwrite($fp,$righe);
+	fclose($fp);
+}
+
+function dbmmfirstkey($dbm)
+{
+	unset($array_da_lavorare);	
+	$array_da_lavorare=file($dbm);
+	$da_esplodere=$array_da_lavorare[0];
+	$stringa_completa=explode("?^?",$da_esplodere);
+	$prima_chiave=$stringa_completa[0];
+	return($prima_chiave);
+}
+
+function dbmmnextkey($dbm,$chiave_prec)
+{
+	unset($arraydbm);	
+	unset($array_da_lavorare);	
+	$array_da_lavorare=file($dbm);
+	while(list($key,$val)=each($array_da_lavorare)):
+		unset($temp);
+		$seconda=explode("?^?",$val);
+		$temp=unserialize($seconda[1]);
+		$IDoggetto_temp=$seconda[0];
+		$arraydbm[$IDoggetto_temp]=$seconda[1];
+	endwhile;
+
+	reset($arraydbm);
+	
+	$esco=0;
+	while(list($key2,$val2)=each($arraydbm)):
+		if ($esco==1):
+			$chiave_succ=$key2;
+			break;
+		endif;
+		if($key2==$chiave_prec):
+			$esco=1;
+		endif;
+	endwhile;
+
+	return($chiave_succ);
+}
+
+?>
